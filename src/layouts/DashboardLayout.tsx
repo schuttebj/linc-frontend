@@ -17,7 +17,6 @@ import {
   Dashboard,
   PersonAdd,
   Search,
-  Settings,
   AdminPanelSettings,
 } from '@mui/icons-material';
 

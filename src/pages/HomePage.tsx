@@ -6,12 +6,7 @@ import {
   Grid,
   Chip
 } from '@mui/material';
-import {
-  Dashboard,
-  PersonAdd,
-  Search,
-  AdminPanelSettings,
-} from '@mui/icons-material';
+
 
 const HomePage = () => {
   return (
