@@ -19,8 +19,6 @@ import {
   CardContent,
   Divider,
   FormControlLabel,
-  Radio,
-  RadioGroup,
   Checkbox,
   Autocomplete
 } from '@mui/material';

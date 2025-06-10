@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -34,15 +34,12 @@ import {
 } from '@mui/material';
 import {
   Search as SearchIcon,
-  Person as PersonIcon,
   Edit as EditIcon,
   Visibility as ViewIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
-  Business as BusinessIcon,
   Phone as PhoneIcon,
   Email as EmailIcon,
-  Home as HomeIcon,
   Clear as ClearIcon
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
@@ -170,7 +167,6 @@ const PersonSearchPage = () => {
   const {
     control,
     handleSubmit,
-    watch,
     reset,
     setValue,
     getValues
@@ -259,7 +255,7 @@ const PersonSearchPage = () => {
   };
 
   // Handle pagination
-  const handlePageChange = (event: unknown, newPage: number) => {
+  const handlePageChange = (_event: unknown, newPage: number) => {
     setPage(newPage);
     const currentData = getValues();
     setValue('skip', newPage * rowsPerPage);
@@ -766,7 +762,7 @@ const PersonSearchPage = () => {
                       <Typography variant="h6" gutterBottom>
                         Identification Documents
                       </Typography>
-                      {selectedPerson.aliases.map((alias, index) => (
+                      {selectedPerson.aliases.map((alias, _index) => (
                         <Box key={alias.id} sx={{ mb: 1 }}>
                           <Typography>
                             <strong>{ID_DOCUMENT_TYPES.find(t => t.value === alias.id_document_type_code)?.fullLabel}:</strong> {alias.id_document_number}
@@ -789,7 +785,7 @@ const PersonSearchPage = () => {
                       <Typography variant="h6" gutterBottom>
                         Addresses
                       </Typography>
-                      {selectedPerson.addresses.map((address, index) => (
+                      {selectedPerson.addresses.map((address, _index) => (
                         <Box key={address.id} sx={{ mb: 1 }}>
                           <Typography>
                             <strong>{address.address_type === 'street' ? 'Street' : 'Postal'} Address:</strong>
