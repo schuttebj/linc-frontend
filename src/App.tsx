@@ -9,6 +9,7 @@ import DashboardLayout from './layouts/DashboardLayout';
 import HomePage from './pages/HomePage';
 import PersonRegistrationPage from './pages/persons/PersonRegistrationPage';
 import PersonSearchPage from './pages/persons/PersonSearchPage';
+import PersonManagementPage from './pages/persons/PersonManagementPage';
 import CountryConfigurationPage from './pages/admin/CountryConfigurationPage';
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
           
           {/* Person Management */}
           <Route path="persons">
+            <Route path="manage" element={<PersonManagementPage />} />
             <Route path="register" element={<PersonRegistrationPage />} />
             <Route path="search" element={<PersonSearchPage />} />
           </Route>

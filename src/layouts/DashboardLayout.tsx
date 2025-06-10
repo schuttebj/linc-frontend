@@ -15,22 +15,38 @@ import {
 } from '@mui/material';
 import {
   Dashboard,
-  PersonAdd,
+  People,
   Search,
+  PersonAdd,
   AdminPanelSettings,
+  ExpandLess,
+  ExpandMore
 } from '@mui/icons-material';
+import { useState } from 'react';
+import { Collapse, List as MuiList } from '@mui/material';
 
 const drawerWidth = 240;
 
 const navigationItems = [
   { text: 'Dashboard', path: '/dashboard', icon: <Dashboard /> },
-  { text: 'Register Person', path: '/dashboard/persons/register', icon: <PersonAdd /> },
-  { text: 'Search Persons', path: '/dashboard/persons/search', icon: <Search /> },
-  { text: 'Country Config', path: '/dashboard/admin/countries', icon: <AdminPanelSettings /> },
+  { 
+    text: 'Persons', 
+    icon: <People />, 
+    subItems: [
+      { text: 'Manage Person', path: '/dashboard/persons/manage', icon: <PersonAdd /> },
+      { text: 'Search & Browse', path: '/dashboard/persons/search', icon: <Search /> },
+    ]
+  },
+  { text: 'Administration', path: '/dashboard/admin/countries', icon: <AdminPanelSettings /> },
 ];
 
 const DashboardLayout: React.FC = () => {
   const location = useLocation();
+  const [personsOpen, setPersonsOpen] = useState(false);
+
+  const handlePersonsClick = () => {
+    setPersonsOpen(!personsOpen);
+  };
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -73,18 +89,53 @@ const DashboardLayout: React.FC = () => {
         
         <List>
           {navigationItems.map((item) => (
-            <ListItem key={item.text} disablePadding>
-              <ListItemButton
-                component={Link}
-                to={item.path}
-                selected={location.pathname === item.path}
-              >
-                <ListItemIcon>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText primary={item.text} />
-              </ListItemButton>
-            </ListItem>
+            <div key={item.text}>
+              {item.subItems ? (
+                <>
+                  <ListItem disablePadding>
+                    <ListItemButton onClick={handlePersonsClick}>
+                      <ListItemIcon>
+                        {item.icon}
+                      </ListItemIcon>
+                      <ListItemText primary={item.text} />
+                      {personsOpen ? <ExpandLess /> : <ExpandMore />}
+                    </ListItemButton>
+                  </ListItem>
+                  <Collapse in={personsOpen} timeout="auto" unmountOnExit>
+                    <MuiList component="div" disablePadding>
+                      {item.subItems.map((subItem) => (
+                        <ListItem key={subItem.text} disablePadding>
+                          <ListItemButton
+                            component={Link}
+                            to={subItem.path}
+                            selected={location.pathname === subItem.path}
+                            sx={{ pl: 4 }}
+                          >
+                            <ListItemIcon>
+                              {subItem.icon}
+                            </ListItemIcon>
+                            <ListItemText primary={subItem.text} />
+                          </ListItemButton>
+                        </ListItem>
+                      ))}
+                    </MuiList>
+                  </Collapse>
+                </>
+              ) : (
+                <ListItem disablePadding>
+                  <ListItemButton
+                    component={Link}
+                    to={item.path}
+                    selected={location.pathname === item.path}
+                  >
+                    <ListItemIcon>
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText primary={item.text} />
+                  </ListItemButton>
+                </ListItem>
+              )}
+            </div>
           ))}
         </List>
       </Drawer>
