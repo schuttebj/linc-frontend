@@ -43,6 +43,8 @@ import {
   Clear as ClearIcon
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
+import { API_ENDPOINTS, api } from '../../config/api';
+import { formatters, validators, createFormattedOnChange } from '../../config/validation';
 
 // Types based on backend models
 interface PersonSearchForm {
@@ -192,20 +194,7 @@ const PersonSearchPage = () => {
         limit: rowsPerPage
       };
 
-      const response = await fetch('/api/v1/persons/search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(searchParams)
-      });
-
-      if (!response.ok) {
-        throw new Error('Search failed');
-      }
-
-      const result: SearchResponse = await response.json();
+      const result: SearchResponse = await api.post(API_ENDPOINTS.personSearch, searchParams);
       setSearchResults(result);
       
     } catch (err: any) {
@@ -222,24 +211,16 @@ const PersonSearchPage = () => {
     
     setLoading(true);
     try {
-      const response = await fetch(`/api/v1/persons/search/by-id-number/${idNumber}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      const results = await api.get(API_ENDPOINTS.personSearchById(idNumber)) as PersonSearchResult[];
+      setSearchResults({
+        persons: results,
+        total_count: results.length,
+        search_summary: {
+          total_results: results.length,
+          search_time_ms: 0,
+          filters_applied: ['id_number']
         }
       });
-
-      if (response.ok) {
-        const results = await response.json();
-        setSearchResults({
-          persons: results,
-          total_count: results.length,
-          search_summary: {
-            total_results: results.length,
-            search_time_ms: 0,
-            filters_applied: ['id_number']
-          }
-        });
-      }
     } catch (err) {
       console.error('Quick search failed:', err);
     } finally {

@@ -12,6 +12,11 @@ import {
   Toolbar,
   Typography,
   CssBaseline,
+  IconButton,
+  Menu,
+  MenuItem,
+  Avatar,
+  Chip
 } from '@mui/material';
 import {
   Dashboard,
@@ -20,10 +25,14 @@ import {
   PersonAdd,
   AdminPanelSettings,
   ExpandLess,
-  ExpandMore
+  ExpandMore,
+  AccountCircle,
+  Logout,
+  Settings
 } from '@mui/icons-material';
 import { useState } from 'react';
 import { Collapse, List as MuiList } from '@mui/material';
+import { useAuth } from '../contexts/AuthContext';
 
 const drawerWidth = 240;
 
@@ -43,9 +52,24 @@ const navigationItems = [
 const DashboardLayout: React.FC = () => {
   const location = useLocation();
   const [personsOpen, setPersonsOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const { user, logout } = useAuth();
 
   const handlePersonsClick = () => {
     setPersonsOpen(!personsOpen);
+  };
+
+  const handleUserMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleUserMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    handleUserMenuClose();
   };
 
   return (
@@ -62,9 +86,52 @@ const DashboardLayout: React.FC = () => {
         }}
       >
         <Toolbar>
-          <Typography variant="h6" noWrap component="div">
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             LINC - Driver's Licensing System
           </Typography>
+          
+          {/* User Menu */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Chip 
+              label={user?.username || 'User'} 
+              variant="outlined" 
+              size="small"
+              sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.3)' }}
+            />
+            <IconButton
+              onClick={handleUserMenuClick}
+              sx={{ color: 'white' }}
+            >
+              <AccountCircle />
+            </IconButton>
+          </Box>
+          
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleUserMenuClose}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+          >
+            <MenuItem onClick={handleUserMenuClose}>
+              <ListItemIcon>
+                <Settings fontSize="small" />
+              </ListItemIcon>
+              Settings
+            </MenuItem>
+            <MenuItem onClick={handleLogout}>
+              <ListItemIcon>
+                <Logout fontSize="small" />
+              </ListItemIcon>
+              Logout
+            </MenuItem>
+          </Menu>
         </Toolbar>
       </AppBar>
 
