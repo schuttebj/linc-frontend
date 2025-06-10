@@ -33,7 +33,6 @@ import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { API_ENDPOINTS } from '../../config/api';
-import { formatters, validators, createFormattedOnChange, extractGenderFromRSAId, extractBirthDateFromRSAId } from '../../config/validation';
 
 // Types
 interface PersonLookupForm {
