@@ -43,7 +43,7 @@ import {
   Clear as ClearIcon
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
-import { API_ENDPOINTS, api } from '../../config/api';
+import { API_ENDPOINTS } from '../../config/api';
 import { formatters, validators, createFormattedOnChange } from '../../config/validation';
 
 // Types based on backend models
@@ -194,7 +194,20 @@ const PersonSearchPage = () => {
         limit: rowsPerPage
       };
 
-      const result: SearchResponse = await api.post(API_ENDPOINTS.personSearch, searchParams);
+      const response = await fetch(API_ENDPOINTS.personSearch, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(searchParams)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Search failed');
+      }
+      
+      const result: SearchResponse = await response.json();
       setSearchResults(result);
       
     } catch (err: any) {
@@ -211,7 +224,17 @@ const PersonSearchPage = () => {
     
     setLoading(true);
     try {
-      const results = await api.get(API_ENDPOINTS.personSearchById(idNumber)) as PersonSearchResult[];
+      const response = await fetch(API_ENDPOINTS.personSearchById(idNumber), {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Search failed');
+      }
+      
+      const results = await response.json() as PersonSearchResult[];
       setSearchResults({
         persons: results,
         total_count: results.length,

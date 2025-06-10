@@ -32,7 +32,7 @@ import {
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { API_ENDPOINTS, api } from '../../config/api';
+import { API_ENDPOINTS } from '../../config/api';
 import { formatters, validators, createFormattedOnChange, extractGenderFromRSAId, extractBirthDateFromRSAId } from '../../config/validation';
 
 // Types
@@ -280,14 +280,22 @@ const PersonManagementPage = () => {
     
     try {
       // V00033 - Check if person exists first
-      const existenceCheck = await api.get(API_ENDPOINTS.personCheckExistence(data.id_document_type_code, data.id_document_number));
+      const existenceResponse = await fetch(API_ENDPOINTS.personCheckExistence(data.id_document_type_code, data.id_document_number), {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       
-      if (existenceCheck.exists) {
-        // V00033 - Person already exists - ERROR and STOP
-        setPersonFound(existenceCheck.person_summary);
-        setIsNewPerson(false);
-        markStepValid(0, false); // Mark as invalid to prevent progression
-        return; // Do not proceed with lookup
+      if (existenceResponse.ok) {
+        const existenceCheck = await existenceResponse.json();
+        
+        if (existenceCheck.exists) {
+          // V00033 - Person already exists - ERROR and STOP
+          setPersonFound(existenceCheck.person_summary);
+          setIsNewPerson(false);
+          markStepValid(0, false); // Mark as invalid to prevent progression
+          return; // Do not proceed with lookup
+        }
       }
       
       const response = await fetch(`http://localhost:8000/api/v1/persons/search/by-id-number/${data.id_document_number}`, {

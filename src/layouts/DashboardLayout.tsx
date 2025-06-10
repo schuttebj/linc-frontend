@@ -15,7 +15,6 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  Avatar,
   Chip
 } from '@mui/material';
 import {
