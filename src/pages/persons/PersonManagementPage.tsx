@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Typography,
@@ -17,14 +17,8 @@ import {
   StepLabel,
   Card,
   CardContent,
-  Divider,
   FormControlLabel,
   Checkbox,
-  Autocomplete,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   IconButton,
   InputAdornment,
   Chip
@@ -33,7 +27,6 @@ import {
   Search as SearchIcon,
   PersonAdd as PersonAddIcon,
   Edit as EditIcon,
-  CheckCircle as CheckCircleIcon,
   Clear as ClearIcon
 } from '@mui/icons-material';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
@@ -278,7 +271,6 @@ const PersonManagementPage = () => {
 
   // Watch form values
   const watchedPersonNature = personForm.watch('person_nature');
-  const watchedLookupData = lookupForm.watch();
 
   // Step 1: ID Lookup functionality
   const performLookup = async (data: PersonLookupForm) => {
@@ -317,36 +309,7 @@ const PersonManagementPage = () => {
     }
   };
 
-  const populateFormFromExisting = (person: ExistingPerson) => {
-    personForm.reset({
-      business_or_surname: person.business_or_surname,
-      initials: person.initials,
-      person_nature: person.person_nature,
-      nationality_code: person.nationality_code,
-      email_address: person.email_address,
-      cell_phone: person.cell_phone,
-      natural_person: person.natural_person ? {
-        full_name_1: person.natural_person.full_name_1 || '',
-        full_name_2: person.natural_person.full_name_2 || '',
-        birth_date: person.natural_person.birth_date || ''
-      } : undefined,
-      aliases: person.aliases?.map(alias => ({
-        id_document_type_code: alias.id_document_type_code,
-        id_document_number: alias.id_document_number,
-        country_of_issue: 'ZA',
-        alias_status: '1',
-        is_current: alias.is_current
-      })) || [],
-      addresses: person.addresses?.map(addr => ({
-        address_type: addr.address_type,
-        address_line_1: addr.address_line_1,
-        address_line_4: addr.address_line_4,
-        postal_code: addr.postal_code,
-        country_code: 'ZA',
-        is_primary: addr.is_primary
-      })) || []
-    });
-  };
+
 
   const setupNewPersonForm = (lookupData: PersonLookupForm) => {
     // Pre-populate with lookup data
@@ -1092,9 +1055,7 @@ const PersonManagementPage = () => {
         <Stepper activeStep={currentStep} alternativeLabel>
           {steps.map((label, index) => (
             <Step key={label} completed={stepValidation[index]}>
-              <StepLabel
-                StepIconComponent={stepValidation[index] ? CheckCircleIcon : undefined}
-              >
+              <StepLabel>
                 {label}
               </StepLabel>
             </Step>
