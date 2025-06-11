@@ -15,8 +15,8 @@ const getApiBaseUrl = (): string => {
     return 'http://localhost:8000'; // Local backend development server
   }
 
-  // Production backend URL - update this when you have a production backend
-  return 'https://your-backend-domain.com'; // Update this for production
+  // Production backend URL - working Render deployment
+  return 'https://linc-backend-ucer.onrender.com'; // Working Render backend
 };
 
 export const API_BASE_URL = getApiBaseUrl();
