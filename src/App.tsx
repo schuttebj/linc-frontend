@@ -12,7 +12,6 @@ import DashboardLayout from './layouts/DashboardLayout';
 // Pages
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
-import PersonRegistrationPage from './pages/persons/PersonRegistrationPage';
 import PersonSearchPage from './pages/persons/PersonSearchPage';
 import PersonManagementPage from './pages/persons/PersonManagementPage';
 import CountryConfigurationPage from './pages/admin/CountryConfigurationPage';
@@ -53,7 +52,7 @@ function App() {
                 path="register" 
                 element={
                   <ProtectedRoute requiredPermission="person:create">
-                    <PersonRegistrationPage />
+                    <PersonManagementPage />
                   </ProtectedRoute>
                 } 
               />
