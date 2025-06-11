@@ -518,6 +518,7 @@ const PersonManagementPage = () => {
 
   const validateCurrentStep = async () => {
     const currentStepData = getCurrentStepData();
+    console.log('Validating step:', currentStep, 'with fields:', currentStepData.fields);
     
     try {
       if (currentStep === 0) {
@@ -526,12 +527,22 @@ const PersonManagementPage = () => {
         markStepValid(0, isValid);
         return isValid;
       } else {
-        // Validate current step fields
-        const isValid = await personForm.trigger(currentStepData.fields as any);
-        markStepValid(currentStep, isValid);
-        return isValid;
+        // For step 1 (person nature), we only need to validate person_nature
+        if (currentStep === 1) {
+          const isValid = await personForm.trigger(['person_nature']);
+          console.log('Person nature validation result:', isValid);
+          markStepValid(currentStep, isValid);
+          return isValid;
+        } else {
+          // Validate current step fields
+          const isValid = await personForm.trigger(currentStepData.fields as any);
+          console.log('Field validation result:', isValid);
+          markStepValid(currentStep, isValid);
+          return isValid;
+        }
       }
     } catch (error) {
+      console.error('Validation error:', error);
       markStepValid(currentStep, false);
       return false;
     }
@@ -541,7 +552,7 @@ const PersonManagementPage = () => {
     const stepData = [
       { fields: ['id_document_type_code', 'id_document_number'] },
       { fields: ['person_nature'] },
-      { fields: ['business_or_surname', 'nationality_code', 'natural_person'] },
+      { fields: ['business_or_surname', 'nationality_code', 'initials', 'email_address', 'home_phone', 'work_phone', 'cell_phone_country_code', 'cell_phone', 'fax_phone', 'natural_person.full_name_1', 'natural_person.full_name_2', 'natural_person.full_name_3', 'natural_person.birth_date'] },
       { fields: ['aliases'] },
       { fields: ['addresses'] },
       { fields: [] } // Review step
@@ -551,16 +562,29 @@ const PersonManagementPage = () => {
   };
 
   const handleNext = async () => {
-    const isValid = await validateCurrentStep();
+    console.log('handleNext called, currentStep:', currentStep);
     
-    if (isValid) {
-      if (currentStep === 0) {
-        // Perform lookup
-        const lookupData = lookupForm.getValues();
-        await performLookup(lookupData);
-      } else if (currentStep < steps.length - 1) {
-        setCurrentStep(currentStep + 1);
+    try {
+      const isValid = await validateCurrentStep();
+      console.log('Step validation result:', isValid);
+      
+      if (isValid) {
+        if (currentStep === 0) {
+          // Perform lookup
+          const lookupData = lookupForm.getValues();
+          await performLookup(lookupData);
+        } else if (currentStep < steps.length - 1) {
+          console.log('Moving to next step:', currentStep + 1);
+          setCurrentStep(currentStep + 1);
+        }
+      } else {
+        console.log('Validation failed for step:', currentStep);
+        // Show validation errors
+        const errors = personForm.formState.errors;
+        console.log('Form errors:', errors);
       }
+    } catch (error) {
+      console.error('Error in handleNext:', error);
     }
   };
 
