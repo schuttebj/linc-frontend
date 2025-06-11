@@ -374,16 +374,44 @@ const PersonManagementPage = () => {
         setLookupDataLoading(true);
         const lookupData = await lookupService.getAllLookups();
         
-        // Ensure we have arrays
-        const provincesArray = Array.isArray(lookupData.provinces) ? lookupData.provinces : [];
-        const phoneCodesArray = Array.isArray(lookupData.phone_codes) ? lookupData.phone_codes : [];
+        // Ensure we have arrays and use fallback if empty
+        const provincesArray = Array.isArray(lookupData.provinces) && lookupData.provinces.length > 0 
+          ? lookupData.provinces 
+          : [
+              { code: 'EC', name: 'Eastern Cape' },
+              { code: 'FS', name: 'Free State' },
+              { code: 'GP', name: 'Gauteng' },
+              { code: 'KZN', name: 'KwaZulu-Natal' },
+              { code: 'LP', name: 'Limpopo' },
+              { code: 'MP', name: 'Mpumalanga' },
+              { code: 'NC', name: 'Northern Cape' },
+              { code: 'NW', name: 'North West' },
+              { code: 'WC', name: 'Western Cape' }
+            ];
+            
+        const phoneCodesArray = Array.isArray(lookupData.phone_codes) && lookupData.phone_codes.length > 0
+          ? lookupData.phone_codes
+          : [
+              { country_code: 'ZA', country_name: 'South Africa', phone_code: '+27' },
+              { country_code: 'US', country_name: 'United States', phone_code: '+1' },
+              { country_code: 'GB', country_name: 'United Kingdom', phone_code: '+44' },
+              { country_code: 'IN', country_name: 'India', phone_code: '+91' },
+              { country_code: 'CN', country_name: 'China', phone_code: '+86' },
+              { country_code: 'FR', country_name: 'France', phone_code: '+33' },
+              { country_code: 'DE', country_name: 'Germany', phone_code: '+49' },
+              { country_code: 'AU', country_name: 'Australia', phone_code: '+61' },
+              { country_code: 'CA', country_name: 'Canada', phone_code: '+1' },
+              { country_code: 'BR', country_name: 'Brazil', phone_code: '+55' }
+            ];
         
         setProvinces(provincesArray);
         setPhoneCodes(phoneCodesArray);
         
         console.log('Loaded lookup data:', { 
           provinces: provincesArray.length, 
-          phoneCodes: phoneCodesArray.length 
+          phoneCodes: phoneCodesArray.length,
+          usingFallbackProvinces: !Array.isArray(lookupData.provinces) || lookupData.provinces.length === 0,
+          usingFallbackPhoneCodes: !Array.isArray(lookupData.phone_codes) || lookupData.phone_codes.length === 0
         });
       } catch (error) {
         console.error('Failed to load lookup data:', error);
@@ -402,13 +430,20 @@ const PersonManagementPage = () => {
         const fallbackPhoneCodes = [
           { country_code: 'ZA', country_name: 'South Africa', phone_code: '+27' },
           { country_code: 'US', country_name: 'United States', phone_code: '+1' },
-          { country_code: 'GB', country_name: 'United Kingdom', phone_code: '+44' }
+          { country_code: 'GB', country_name: 'United Kingdom', phone_code: '+44' },
+          { country_code: 'IN', country_name: 'India', phone_code: '+91' },
+          { country_code: 'CN', country_name: 'China', phone_code: '+86' },
+          { country_code: 'FR', country_name: 'France', phone_code: '+33' },
+          { country_code: 'DE', country_name: 'Germany', phone_code: '+49' },
+          { country_code: 'AU', country_name: 'Australia', phone_code: '+61' },
+          { country_code: 'CA', country_name: 'Canada', phone_code: '+1' },
+          { country_code: 'BR', country_name: 'Brazil', phone_code: '+55' }
         ];
         
         setProvinces(fallbackProvinces);
         setPhoneCodes(fallbackPhoneCodes);
         
-        console.log('Using fallback data:', { 
+        console.log('Using fallback data due to error:', { 
           provinces: fallbackProvinces.length, 
           phoneCodes: fallbackPhoneCodes.length 
         });
