@@ -3,7 +3,7 @@
  * Implements complete person lifecycle management with validation
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -26,7 +26,8 @@ import {
   Checkbox,
   IconButton,
   InputAdornment,
-  Chip
+  Chip,
+  Autocomplete
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -40,6 +41,7 @@ import * as yup from 'yup';
 import { API_ENDPOINTS } from '../../config/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_BASE_URL } from '../../config/api';
+import lookupService, { Province, PhoneCode } from '../../config/lookupService';
 
 // Types
 interface PersonLookupForm {
@@ -163,11 +165,24 @@ const personSchema = yup.object({
   nationality_code: yup.string().required('Person nationality is mandatory (V00040)'),
   
   // V00051 - Initials mandatory for natural persons
-  initials: yup.string().when('person_nature', {
-    is: (val: string) => ['01', '02'].includes(val),
-    then: () => yup.string().required('Person initials are mandatory for natural persons (V00051)').max(3),
-    otherwise: () => yup.string().max(3)
-  }),
+  initials: yup.string()
+    .max(3, 'Maximum 3 characters')
+    .matches(/^[A-Z]*$/, 'Initials must be uppercase letters only')
+    .when('person_nature', {
+      is: (val: string) => ['01', '02'].includes(val),
+      then: () => yup.string().required('Person initials are mandatory for natural persons (V00051)'),
+      otherwise: () => yup.string().test(
+        'no-initials-for-organizations', 
+        'Initials only applicable to natural persons (V00001)', 
+        function(value) {
+          const personNature = this.parent.person_nature;
+          if (value && personNature && !['01', '02'].includes(personNature)) {
+            return false;
+          }
+          return true;
+        }
+      )
+    }),
   
   natural_person: yup.object().when('person_nature', {
     is: (val: string) => ['01', '02'].includes(val),
@@ -175,9 +190,34 @@ const personSchema = yup.object({
       full_name_1: yup.string().required('Natural person full name 1 is mandatory (V00056)').max(32),
       full_name_2: yup.string().max(32),
       full_name_3: yup.string().max(32),
+      birth_date: yup.string().test('min-date', 'Date must be after 1840-01-01', function(value) {
+        if (!value) return true;
+        return value >= '1840-01-01';
+      })
     }),
     otherwise: () => yup.mixed().notRequired()
   }),
+
+  // Phone number validation
+  email_address: yup.string()
+    .max(50, 'Maximum 50 characters')
+    .email('Invalid email format'),
+  home_phone: yup.string()
+    .max(20, 'Maximum 20 characters'),
+  work_phone: yup.string()
+    .max(20, 'Maximum 20 characters'),
+  cell_phone_country_code: yup.string()
+    .matches(/^\+\d{1,4}$/, 'Invalid country code format'),
+  cell_phone: yup.string()
+    .max(15, 'Maximum 15 characters')
+    .matches(/^\d*$/, 'Cell phone must contain only digits')
+    .when('cell_phone_country_code', {
+      is: (val: string) => !!val,
+      then: () => yup.string().required('Cell phone number required when country code is provided'),
+      otherwise: () => yup.string()
+    }),
+  fax_phone: yup.string()
+    .max(20, 'Maximum 20 characters'),
   
   // V00012 - Only RSA ID (02) and Foreign ID (03) allowed
   aliases: yup.array().of(
@@ -202,15 +242,35 @@ const personSchema = yup.object({
           return true;
         }),
       country_of_issue: yup.string().required(),
-      alias_status: yup.string().required()
+      alias_status: yup.string().required(),
+      id_document_expiry_date: yup.string()
+        .test('future-date', 'Expiry date must be in the future', function(value) {
+          if (!value) return true;
+          return new Date(value) > new Date();
+        })
+        .when('id_document_type_code', {
+          is: '03', // Foreign ID
+          then: () => yup.string().required('Expiry date is required for foreign documents'),
+          otherwise: () => yup.string()
+        })
     })
   ).min(1, 'At least one identification document is required'),
   
   addresses: yup.array().of(
     yup.object({
       address_type: yup.string().required(),
-      address_line_1: yup.string().required('Person postal address line 1 is mandatory'),
-      postal_code: yup.string().matches(/^\d{4}$/, 'Postal code must be exactly 4 digits').required('Person postal address postal code is mandatory')
+      address_line_1: yup.string()
+        .max(35, 'Maximum 35 characters')
+        .required('Address line 1 is mandatory'),
+      address_line_2: yup.string().max(35, 'Maximum 35 characters'),
+      address_line_3: yup.string().max(35, 'Maximum 35 characters'),
+      address_line_4: yup.string().max(35, 'Maximum 35 characters'),
+      address_line_5: yup.string().max(35, 'Maximum 35 characters'),
+      postal_code: yup.string()
+        .matches(/^\d{4}$/, 'Postal code must be exactly 4 digits')
+        .required('Postal code is mandatory'),
+      country_code: yup.string().required(),
+      province_code: yup.string()
     })
   ).min(1, 'At least one address is required')
 });
@@ -236,6 +296,11 @@ const PersonManagementPage = () => {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [stepValidation, setStepValidation] = useState<boolean[]>(new Array(steps.length).fill(false));
   
+  // Lookup data state
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  const [phoneCodes, setPhoneCodes] = useState<PhoneCode[]>([]);
+  const [lookupDataLoading, setLookupDataLoading] = useState(true);
+  
   // Lookup form
   const lookupForm = useForm<PersonLookupForm>({
     resolver: yupResolver(lookupSchema),
@@ -253,17 +318,37 @@ const PersonManagementPage = () => {
       person_nature: '',
       nationality_code: 'ZA',
       preferred_language: 'en',
+      email_address: '',
+      home_phone: '',
+      work_phone: '',
+      cell_phone_country_code: '',
+      cell_phone: '',
+      fax_phone: '',
+      natural_person: {
+        full_name_1: '',
+        full_name_2: '',
+        full_name_3: '',
+        birth_date: '',
+        preferred_language_code: 'en'
+      },
       aliases: [{
         id_document_type_code: '02',
         id_document_number: '',
         country_of_issue: 'ZA',
         alias_status: '1',
-        is_current: true
+        is_current: true,
+        id_document_expiry_date: ''
       }],
       addresses: [{
         address_type: 'street',
         address_line_1: '',
+        address_line_2: '',
+        address_line_3: '',
+        address_line_4: '',
+        address_line_5: '',
+        postal_code: '',
         country_code: 'ZA',
+        province_code: '',
         is_primary: true
       }]
     }
@@ -281,6 +366,41 @@ const PersonManagementPage = () => {
 
   // Watch form values
   const watchedPersonNature = personForm.watch('person_nature');
+
+  // Load lookup data on component mount
+  useEffect(() => {
+    const loadLookupData = async () => {
+      try {
+        setLookupDataLoading(true);
+        const lookupData = await lookupService.getAllLookups();
+        setProvinces(lookupData.provinces);
+        setPhoneCodes(lookupData.phone_codes);
+      } catch (error) {
+        console.error('Failed to load lookup data:', error);
+        // Use fallback data
+        setProvinces([
+          { code: 'EC', name: 'Eastern Cape' },
+          { code: 'FS', name: 'Free State' },
+          { code: 'GP', name: 'Gauteng' },
+          { code: 'KZN', name: 'KwaZulu-Natal' },
+          { code: 'LP', name: 'Limpopo' },
+          { code: 'MP', name: 'Mpumalanga' },
+          { code: 'NC', name: 'Northern Cape' },
+          { code: 'NW', name: 'North West' },
+          { code: 'WC', name: 'Western Cape' }
+        ]);
+        setPhoneCodes([
+          { country_code: 'ZA', country_name: 'South Africa', phone_code: '+27' },
+          { country_code: 'US', country_name: 'United States', phone_code: '+1' },
+          { country_code: 'GB', country_name: 'United Kingdom', phone_code: '+44' }
+        ]);
+      } finally {
+        setLookupDataLoading(false);
+      }
+    };
+
+    loadLookupData();
+  }, []);
 
   // Step 1: ID Lookup functionality
   const performLookup = async (data: PersonLookupForm) => {
@@ -836,7 +956,9 @@ const PersonManagementPage = () => {
                   fullWidth
                   type="email"
                   label="Email Address"
-                  helperText="Email address (optional)"
+                  error={!!personForm.formState.errors.email_address}
+                  helperText={personForm.formState.errors.email_address?.message || "Email address (optional, max 50 chars)"}
+                  inputProps={{ maxLength: 50 }}
                 />
               )}
             />
@@ -844,14 +966,110 @@ const PersonManagementPage = () => {
 
           <Grid item xs={12} md={6}>
             <Controller
+              name="home_phone"
+              control={personForm.control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label="Home Phone"
+                  error={!!personForm.formState.errors.home_phone}
+                  helperText={personForm.formState.errors.home_phone?.message || "Home phone number (optional, max 20 chars)"}
+                  inputProps={{ maxLength: 20 }}
+                />
+              )}
+            />
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Controller
+              name="work_phone"
+              control={personForm.control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label="Work Phone"
+                  error={!!personForm.formState.errors.work_phone}
+                  helperText={personForm.formState.errors.work_phone?.message || "Work phone number (optional, max 20 chars)"}
+                  inputProps={{ maxLength: 20 }}
+                />
+              )}
+            />
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Controller
+              name="fax_phone"
+              control={personForm.control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label="Fax Phone"
+                  error={!!personForm.formState.errors.fax_phone}
+                  helperText={personForm.formState.errors.fax_phone?.message || "Fax phone number (optional, max 20 chars)"}
+                  inputProps={{ maxLength: 20 }}
+                />
+              )}
+            />
+          </Grid>
+
+          {/* Cell Phone with Country Code */}
+          <Grid item xs={12}>
+            <Typography variant="subtitle2" gutterBottom>
+              Cell Phone (International)
+            </Typography>
+          </Grid>
+
+          <Grid item xs={12} md={4}>
+            <Controller
+              name="cell_phone_country_code"
+              control={personForm.control}
+              render={({ field }) => (
+                <FormControl fullWidth error={!!personForm.formState.errors.cell_phone_country_code}>
+                  <Autocomplete
+                    {...field}
+                    options={phoneCodes}
+                    getOptionLabel={(option) => `${option.phone_code} (${option.country_name})`}
+                    value={phoneCodes.find(code => code.phone_code === field.value) || null}
+                    onChange={(_, newValue) => field.onChange(newValue?.phone_code || '')}
+                    loading={lookupDataLoading}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Country Code"
+                        error={!!personForm.formState.errors.cell_phone_country_code}
+                        helperText={personForm.formState.errors.cell_phone_country_code?.message || "Select country code for cell phone"}
+                      />
+                    )}
+                  />
+                </FormControl>
+              )}
+            />
+          </Grid>
+
+          <Grid item xs={12} md={8}>
+            <Controller
               name="cell_phone"
               control={personForm.control}
               render={({ field }) => (
                 <TextField
                   {...field}
                   fullWidth
-                  label="Cell Phone"
-                  helperText="Mobile phone number (optional)"
+                  label="Cell Phone Number"
+                  error={!!personForm.formState.errors.cell_phone}
+                  helperText={personForm.formState.errors.cell_phone?.message || "Cell phone number (digits only, max 15 chars)"}
+                  inputProps={{ 
+                    maxLength: 15,
+                    pattern: '[0-9]*',
+                    inputMode: 'numeric'
+                  }}
+                  onChange={(e) => {
+                    // Only allow digits
+                    const value = e.target.value.replace(/\D/g, '');
+                    field.onChange(value);
+                  }}
                 />
               )}
             />
@@ -919,6 +1137,30 @@ const PersonManagementPage = () => {
                 />
               </Grid>
 
+              {/* Expiry Date for Foreign Documents */}
+              {personForm.watch(`aliases.${index}.id_document_type_code`) === '03' && (
+                <Grid item xs={12} md={3}>
+                  <Controller
+                    name={`aliases.${index}.id_document_expiry_date`}
+                    control={personForm.control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        type="date"
+                        label="Expiry Date *"
+                        InputLabelProps={{ shrink: true }}
+                        error={!!personForm.formState.errors.aliases?.[index]?.id_document_expiry_date}
+                        helperText={
+                          personForm.formState.errors.aliases?.[index]?.id_document_expiry_date?.message || 
+                          "Required for foreign documents"
+                        }
+                      />
+                    )}
+                  />
+                </Grid>
+              )}
+
               {index > 0 && (
                 <Grid item xs={12} md={1}>
                   <Button
@@ -978,23 +1220,6 @@ const PersonManagementPage = () => {
                 />
               </Grid>
 
-              <Grid item xs={12} md={6}>
-                <Controller
-                  name={`addresses.${index}.address_line_1`}
-                  control={personForm.control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                      fullWidth
-                      label="Address Line 1 *"
-                      helperText="Street address or postal address line 1 - Auto-converted to UPPERCASE"
-                      inputProps={{ style: { textTransform: 'uppercase' } }}
-                    />
-                  )}
-                />
-              </Grid>
-
               <Grid item xs={12} md={2}>
                 <Controller
                   name={`addresses.${index}.is_primary`}
@@ -1008,18 +1233,23 @@ const PersonManagementPage = () => {
                 />
               </Grid>
 
-              <Grid item xs={12} md={4}>
+              {/* Address Line 1 */}
+              <Grid item xs={12} md={6}>
                 <Controller
-                  name={`addresses.${index}.address_line_4`}
+                  name={`addresses.${index}.address_line_1`}
                   control={personForm.control}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                       fullWidth
-                      label="Suburb"
-                      helperText="Suburb or area - Auto-converted to UPPERCASE"
-                      inputProps={{ style: { textTransform: 'uppercase' } }}
+                      label="Address Line 1 *"
+                      error={!!personForm.formState.errors.addresses?.[index]?.address_line_1}
+                      helperText={
+                        personForm.formState.errors.addresses?.[index]?.address_line_1?.message || 
+                        "Street address or postal address line 1 (max 35 chars) - Auto-converted to UPPERCASE"
+                      }
+                      inputProps={{ maxLength: 35, style: { textTransform: 'uppercase' } }}
                     />
                   )}
                 />
@@ -1033,10 +1263,140 @@ const PersonManagementPage = () => {
                     <TextField
                       {...field}
                       fullWidth
-                      label="Postal Code"
-                      helperText="4-digit postal code (V00098)"
-                      inputProps={{ maxLength: 4 }}
+                      label="Postal Code *"
+                      error={!!personForm.formState.errors.addresses?.[index]?.postal_code}
+                      helperText={
+                        personForm.formState.errors.addresses?.[index]?.postal_code?.message || 
+                        "4-digit postal code"
+                      }
+                      inputProps={{ 
+                        maxLength: 4,
+                        pattern: '[0-9]*',
+                        inputMode: 'numeric'
+                      }}
+                      onChange={(e) => {
+                        // Only allow digits
+                        const value = e.target.value.replace(/\D/g, '');
+                        field.onChange(value);
+                      }}
                     />
+                  )}
+                />
+              </Grid>
+
+              {/* Address Line 2 */}
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name={`addresses.${index}.address_line_2`}
+                  control={personForm.control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                      fullWidth
+                      label="Address Line 2"
+                      helperText="Additional address information (max 35 chars) - Auto-converted to UPPERCASE"
+                      inputProps={{ maxLength: 35, style: { textTransform: 'uppercase' } }}
+                    />
+                  )}
+                />
+              </Grid>
+
+              {/* Address Line 3 */}
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name={`addresses.${index}.address_line_3`}
+                  control={personForm.control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                      fullWidth
+                      label="Address Line 3"
+                      helperText="Additional address information (max 35 chars) - Auto-converted to UPPERCASE"
+                      inputProps={{ maxLength: 35, style: { textTransform: 'uppercase' } }}
+                    />
+                  )}
+                />
+              </Grid>
+
+              {/* Address Line 4 - Suburb */}
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name={`addresses.${index}.address_line_4`}
+                  control={personForm.control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                      fullWidth
+                      label="Suburb"
+                      helperText="Suburb or area (max 35 chars) - Auto-converted to UPPERCASE"
+                      inputProps={{ maxLength: 35, style: { textTransform: 'uppercase' } }}
+                    />
+                  )}
+                />
+              </Grid>
+
+              {/* Address Line 5 - City/Town */}
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name={`addresses.${index}.address_line_5`}
+                  control={personForm.control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                      fullWidth
+                      label="City/Town"
+                      helperText="City or town (max 35 chars) - Auto-converted to UPPERCASE"
+                      inputProps={{ maxLength: 35, style: { textTransform: 'uppercase' } }}
+                    />
+                  )}
+                />
+              </Grid>
+
+              {/* Province Dropdown */}
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name={`addresses.${index}.province_code`}
+                  control={personForm.control}
+                  render={({ field }) => (
+                    <FormControl fullWidth>
+                      <Autocomplete
+                        {...field}
+                        options={provinces}
+                        getOptionLabel={(option) => `${option.name} (${option.code})`}
+                        value={provinces.find(province => province.code === field.value) || null}
+                        onChange={(_, newValue) => field.onChange(newValue?.code || '')}
+                        loading={lookupDataLoading}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="Province"
+                            helperText="Select province (South Africa only)"
+                          />
+                        )}
+                      />
+                    </FormControl>
+                  )}
+                />
+              </Grid>
+
+              {/* Country Code */}
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name={`addresses.${index}.country_code`}
+                  control={personForm.control}
+                  render={({ field }) => (
+                    <FormControl fullWidth>
+                      <InputLabel>Country</InputLabel>
+                      <Select {...field} label="Country">
+                        <MenuItem value="ZA">South Africa</MenuItem>
+                        <MenuItem value="US">United States</MenuItem>
+                        <MenuItem value="GB">United Kingdom</MenuItem>
+                      </Select>
+                    </FormControl>
                   )}
                 />
               </Grid>
