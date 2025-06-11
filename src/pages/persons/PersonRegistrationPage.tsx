@@ -463,7 +463,7 @@ const PersonRegistrationPage = () => {
       }
       
       // Call person creation API
-      const response = await fetch(`${API_BASE_URL}/api/v1/persons`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/persons/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

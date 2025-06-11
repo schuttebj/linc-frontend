@@ -456,7 +456,7 @@ const PersonManagementPage = () => {
     
     try {
       const formData = personForm.getValues();
-      const url = isNewPerson ? `${API_BASE_URL}/api/v1/persons` : `${API_BASE_URL}/api/v1/persons/${personFound?.id}`;
+              const url = isNewPerson ? `${API_BASE_URL}/api/v1/persons/` : `${API_BASE_URL}/api/v1/persons/${personFound?.id}`;
       const method = isNewPerson ? 'POST' : 'PUT';
       
       const response = await fetch(url, {
