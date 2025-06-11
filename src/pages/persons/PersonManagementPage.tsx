@@ -518,7 +518,6 @@ const PersonManagementPage = () => {
 
   const validateCurrentStep = async () => {
     const currentStepData = getCurrentStepData();
-    console.log('Validating step:', currentStep, 'with fields:', currentStepData.fields);
     
     try {
       if (currentStep === 0) {
@@ -530,19 +529,16 @@ const PersonManagementPage = () => {
         // For step 1 (person nature), we only need to validate person_nature
         if (currentStep === 1) {
           const isValid = await personForm.trigger(['person_nature']);
-          console.log('Person nature validation result:', isValid);
           markStepValid(currentStep, isValid);
           return isValid;
         } else {
           // Validate current step fields
           const isValid = await personForm.trigger(currentStepData.fields as any);
-          console.log('Field validation result:', isValid);
           markStepValid(currentStep, isValid);
           return isValid;
         }
       }
     } catch (error) {
-      console.error('Validation error:', error);
       markStepValid(currentStep, false);
       return false;
     }
@@ -562,29 +558,16 @@ const PersonManagementPage = () => {
   };
 
   const handleNext = async () => {
-    console.log('handleNext called, currentStep:', currentStep);
+    const isValid = await validateCurrentStep();
     
-    try {
-      const isValid = await validateCurrentStep();
-      console.log('Step validation result:', isValid);
-      
-      if (isValid) {
-        if (currentStep === 0) {
-          // Perform lookup
-          const lookupData = lookupForm.getValues();
-          await performLookup(lookupData);
-        } else if (currentStep < steps.length - 1) {
-          console.log('Moving to next step:', currentStep + 1);
-          setCurrentStep(currentStep + 1);
-        }
-      } else {
-        console.log('Validation failed for step:', currentStep);
-        // Show validation errors
-        const errors = personForm.formState.errors;
-        console.log('Form errors:', errors);
+    if (isValid) {
+      if (currentStep === 0) {
+        // Perform lookup
+        const lookupData = lookupForm.getValues();
+        await performLookup(lookupData);
+      } else if (currentStep < steps.length - 1) {
+        setCurrentStep(currentStep + 1);
       }
-    } catch (error) {
-      console.error('Error in handleNext:', error);
     }
   };
 
@@ -1054,9 +1037,9 @@ const PersonManagementPage = () => {
                 <FormControl fullWidth error={!!personForm.formState.errors.cell_phone_country_code}>
                   <Autocomplete
                     {...field}
-                    options={phoneCodes}
+                    options={phoneCodes || []}
                     getOptionLabel={(option) => `${option.phone_code} (${option.country_name})`}
-                    value={phoneCodes.find(code => code.phone_code === field.value) || null}
+                    value={(phoneCodes || []).find(code => code.phone_code === field.value) || null}
                     onChange={(_, newValue) => field.onChange(newValue?.phone_code || '')}
                     loading={lookupDataLoading}
                     renderInput={(params) => (
@@ -1389,9 +1372,9 @@ const PersonManagementPage = () => {
                     <FormControl fullWidth>
                       <Autocomplete
                         {...field}
-                        options={provinces}
+                        options={provinces || []}
                         getOptionLabel={(option) => `${option.name} (${option.code})`}
-                        value={provinces.find(province => province.code === field.value) || null}
+                        value={(provinces || []).find(province => province.code === field.value) || null}
                         onChange={(_, newValue) => field.onChange(newValue?.code || '')}
                         loading={lookupDataLoading}
                         renderInput={(params) => (
