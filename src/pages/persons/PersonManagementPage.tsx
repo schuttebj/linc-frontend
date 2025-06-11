@@ -152,11 +152,40 @@ const PERSON_NATURES = [
   { value: '17', label: 'Other Organization' }
 ];
 
+// RSA ID validation function
+const validateRSAID = (idNumber: string): boolean => {
+  if (!idNumber || idNumber.length !== 13) return false;
+  if (!/^\d{13}$/.test(idNumber)) return false;
+  
+  // Calculate checksum using Luhn algorithm
+  const digits = idNumber.split('').map(Number);
+  let sum = 0;
+  
+  for (let i = 0; i < 12; i++) {
+    if (i % 2 === 0) {
+      sum += digits[i];
+    } else {
+      const doubled = digits[i] * 2;
+      sum += doubled > 9 ? doubled - 9 : doubled;
+    }
+  }
+  
+  const checkDigit = (10 - (sum % 10)) % 10;
+  return checkDigit === digits[12];
+};
+
 // Validation schemas
 const lookupSchema = yup.object({
   id_document_type_code: yup.string().required('ID document type is required'),
   id_document_number: yup.string().required('ID document number is required')
     .min(3, 'ID number must be at least 3 characters')
+    .test('rsa-id-validation', 'Invalid RSA ID number - check digit validation failed (V00019)', function(value) {
+      const { id_document_type_code } = this.parent;
+      if (id_document_type_code === '02' && value) {
+        return validateRSAID(value);
+      }
+      return true;
+    })
 });
 
 const personSchema = yup.object({
@@ -238,6 +267,13 @@ const personSchema = yup.object({
           const { id_document_type_code } = this.parent;
           if (id_document_type_code === '02') {
             return /^\d+$/.test(value || '');
+          }
+          return true;
+        })
+        .test('rsa-id-checksum', 'Invalid RSA ID number - check digit validation failed (V00019)', function(value) {
+          const { id_document_type_code } = this.parent;
+          if (id_document_type_code === '02' && value) {
+            return validateRSAID(value);
           }
           return true;
         }),
@@ -635,7 +671,17 @@ const PersonManagementPage = () => {
     
     try {
       const formData = personForm.getValues();
-              const url = isNewPerson ? `${API_BASE_URL}/api/v1/persons/` : `${API_BASE_URL}/api/v1/persons/${personFound?.id}`;
+      
+      // Clean up empty date fields to prevent backend validation errors
+      if (formData.aliases) {
+        formData.aliases = formData.aliases.map(alias => ({
+          ...alias,
+          // Remove empty expiry date or convert to null
+          id_document_expiry_date: alias.id_document_expiry_date?.trim() || null
+        }));
+      }
+      
+      const url = isNewPerson ? `${API_BASE_URL}/api/v1/persons/` : `${API_BASE_URL}/api/v1/persons/${personFound?.id}`;
       const method = isNewPerson ? 'POST' : 'PUT';
       
       const response = await fetch(url, {
@@ -650,6 +696,9 @@ const PersonManagementPage = () => {
       if (response.ok) {
         // Success - redirect or show success message
         console.log('Person saved successfully');
+      } else {
+        const errorData = await response.json();
+        console.error('Submit failed:', errorData);
       }
     } catch (error) {
       console.error('Submit failed:', error);
