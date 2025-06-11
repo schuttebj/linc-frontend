@@ -373,12 +373,22 @@ const PersonManagementPage = () => {
       try {
         setLookupDataLoading(true);
         const lookupData = await lookupService.getAllLookups();
-        setProvinces(lookupData.provinces);
-        setPhoneCodes(lookupData.phone_codes);
+        
+        // Ensure we have arrays
+        const provincesArray = Array.isArray(lookupData.provinces) ? lookupData.provinces : [];
+        const phoneCodesArray = Array.isArray(lookupData.phone_codes) ? lookupData.phone_codes : [];
+        
+        setProvinces(provincesArray);
+        setPhoneCodes(phoneCodesArray);
+        
+        console.log('Loaded lookup data:', { 
+          provinces: provincesArray.length, 
+          phoneCodes: phoneCodesArray.length 
+        });
       } catch (error) {
         console.error('Failed to load lookup data:', error);
         // Use fallback data
-        setProvinces([
+        const fallbackProvinces = [
           { code: 'EC', name: 'Eastern Cape' },
           { code: 'FS', name: 'Free State' },
           { code: 'GP', name: 'Gauteng' },
@@ -388,12 +398,20 @@ const PersonManagementPage = () => {
           { code: 'NC', name: 'Northern Cape' },
           { code: 'NW', name: 'North West' },
           { code: 'WC', name: 'Western Cape' }
-        ]);
-        setPhoneCodes([
+        ];
+        const fallbackPhoneCodes = [
           { country_code: 'ZA', country_name: 'South Africa', phone_code: '+27' },
           { country_code: 'US', country_name: 'United States', phone_code: '+1' },
           { country_code: 'GB', country_name: 'United Kingdom', phone_code: '+44' }
-        ]);
+        ];
+        
+        setProvinces(fallbackProvinces);
+        setPhoneCodes(fallbackPhoneCodes);
+        
+        console.log('Using fallback data:', { 
+          provinces: fallbackProvinces.length, 
+          phoneCodes: fallbackPhoneCodes.length 
+        });
       } finally {
         setLookupDataLoading(false);
       }
@@ -1037,9 +1055,9 @@ const PersonManagementPage = () => {
                 <FormControl fullWidth error={!!personForm.formState.errors.cell_phone_country_code}>
                   <Autocomplete
                     {...field}
-                    options={phoneCodes || []}
+                    options={Array.isArray(phoneCodes) ? phoneCodes : []}
                     getOptionLabel={(option) => `${option.phone_code} (${option.country_name})`}
-                    value={(phoneCodes || []).find(code => code.phone_code === field.value) || null}
+                    value={Array.isArray(phoneCodes) ? phoneCodes.find(code => code.phone_code === field.value) || null : null}
                     onChange={(_, newValue) => field.onChange(newValue?.phone_code || '')}
                     loading={lookupDataLoading}
                     renderInput={(params) => (
@@ -1372,9 +1390,9 @@ const PersonManagementPage = () => {
                     <FormControl fullWidth>
                       <Autocomplete
                         {...field}
-                        options={provinces || []}
+                        options={Array.isArray(provinces) ? provinces : []}
                         getOptionLabel={(option) => `${option.name} (${option.code})`}
-                        value={(provinces || []).find(province => province.code === field.value) || null}
+                        value={Array.isArray(provinces) ? provinces.find(province => province.code === field.value) || null : null}
                         onChange={(_, newValue) => field.onChange(newValue?.code || '')}
                         loading={lookupDataLoading}
                         renderInput={(params) => (
