@@ -93,13 +93,26 @@ const validationSchema = yup.object({
   nationality_code: yup.string().required('Nationality is mandatory'),
   
   // ALPHA format: A-Z only (max 3)
+  // V00001: Initials only applicable to natural persons
+  // V00051: Initials mandatory for natural persons
   initials: yup.string()
     .max(3, 'Maximum 3 characters')
     .matches(/^[A-Z]*$/, 'Initials must be uppercase letters only')
     .when('person_nature', {
       is: (val: string) => ['01', '02'].includes(val),
       then: () => yup.string().required('Initials are mandatory for natural persons (V00051)'),
-      otherwise: () => yup.string()
+      otherwise: () => yup.string().test(
+        'no-initials-for-organizations', 
+        'Initials only applicable to natural persons (V00001)', 
+        function(value) {
+          // If person_nature is not natural person (01,02) and initials is provided, fail
+          const personNature = this.parent.person_nature;
+          if (value && personNature && !['01', '02'].includes(personNature)) {
+            return false;
+          }
+          return true;
+        }
+      )
     }),
   
   // Natural person validation
@@ -347,6 +360,13 @@ const PersonRegistrationPage = () => {
     }
   }, [watchedAliases, setValue, getValues]);
 
+  // Clear initials when person_nature changes to non-natural person
+  useEffect(() => {
+    if (watchedPersonNature && !['01', '02'].includes(watchedPersonNature)) {
+      setValue('initials', '');
+    }
+  }, [watchedPersonNature, setValue]);
+
   const steps = [
     'Basic Information',
     'Identification Documents', 
@@ -459,8 +479,9 @@ const PersonRegistrationPage = () => {
                     <TextField
                       {...field}
                       fullWidth
-                      label="Initials"
-                      helperText="Optional initials (max 3 characters)"
+                      label="Initials *"
+                      error={!!errors.initials}
+                      helperText={errors.initials?.message || 'Initials (max 3 characters) - V00051: Mandatory for natural persons'}
                       inputProps={{ maxLength: 3, style: { textTransform: 'uppercase' } }}
                     />
                   )}
