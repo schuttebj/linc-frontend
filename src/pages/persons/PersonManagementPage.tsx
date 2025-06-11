@@ -707,11 +707,12 @@ const PersonManagementPage = () => {
               render={({ field }) => (
                 <TextField
                   {...field}
+                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                   fullWidth
                   label={['01', '02'].includes(watchedPersonNature) ? 'Surname *' : 'Business Name *'}
                   error={!!personForm.formState.errors.business_or_surname}
-                  helperText={personForm.formState.errors.business_or_surname?.message || 'Business name or surname (V00043)'}
-                  inputProps={{ maxLength: 32 }}
+                  helperText={personForm.formState.errors.business_or_surname?.message || 'Business name or surname (V00043) - Auto-converted to UPPERCASE'}
+                  inputProps={{ maxLength: 32, style: { textTransform: 'uppercase' } }}
                 />
               )}
             />
@@ -726,10 +727,11 @@ const PersonManagementPage = () => {
                 render={({ field }) => (
                   <TextField
                     {...field}
+                    onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                     fullWidth
                     label="Initials *"
                     error={!!personForm.formState.errors.initials}
-                    helperText={personForm.formState.errors.initials?.message || 'Initials are mandatory for natural persons (V00051)'}
+                    helperText={personForm.formState.errors.initials?.message || 'Initials are mandatory for natural persons (V00051) - Auto-converted to UPPERCASE'}
                     inputProps={{ maxLength: 3, style: { textTransform: 'uppercase' } }}
                   />
                 )}
@@ -771,11 +773,12 @@ const PersonManagementPage = () => {
                   render={({ field }) => (
                     <TextField
                       {...field}
+                      onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                       fullWidth
                       label="First Name *"
                       error={!!personForm.formState.errors.natural_person?.full_name_1}
-                      helperText={personForm.formState.errors.natural_person?.full_name_1?.message || 'First/given name (V00056)'}
-                      inputProps={{ maxLength: 32 }}
+                      helperText={personForm.formState.errors.natural_person?.full_name_1?.message || 'First/given name (V00056) - Auto-converted to UPPERCASE'}
+                      inputProps={{ maxLength: 32, style: { textTransform: 'uppercase' } }}
                     />
                   )}
                 />
@@ -788,10 +791,11 @@ const PersonManagementPage = () => {
                   render={({ field }) => (
                     <TextField
                       {...field}
+                      onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                       fullWidth
                       label="Middle Name"
-                      helperText="Middle name (optional)"
-                      inputProps={{ maxLength: 32 }}
+                      helperText="Middle name (optional) - Auto-converted to UPPERCASE"
+                      inputProps={{ maxLength: 32, style: { textTransform: 'uppercase' } }}
                     />
                   )}
                 />
@@ -982,9 +986,11 @@ const PersonManagementPage = () => {
                   render={({ field }) => (
                     <TextField
                       {...field}
+                      onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                       fullWidth
                       label="Address Line 1 *"
-                      helperText="Street address or postal address line 1"
+                      helperText="Street address or postal address line 1 - Auto-converted to UPPERCASE"
+                      inputProps={{ style: { textTransform: 'uppercase' } }}
                     />
                   )}
                 />
@@ -1010,9 +1016,11 @@ const PersonManagementPage = () => {
                   render={({ field }) => (
                     <TextField
                       {...field}
+                      onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                       fullWidth
                       label="Suburb"
-                      helperText="Suburb or area"
+                      helperText="Suburb or area - Auto-converted to UPPERCASE"
+                      inputProps={{ style: { textTransform: 'uppercase' } }}
                     />
                   )}
                 />
