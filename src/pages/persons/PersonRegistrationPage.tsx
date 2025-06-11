@@ -117,7 +117,10 @@ const validationSchema = yup.object({
       full_name_3: yup.string()
         .max(32, 'Maximum 32 characters')
         .matches(/^[A-Z0-9\s\-&()'ËÉÄÖÜÇ]*$/i, 'Invalid characters in last name'),
-      birth_date: yup.string().min('1840-01-01', 'Date must be after 1840-01-01')
+      birth_date: yup.string().test('min-date', 'Date must be after 1840-01-01', function(value) {
+        if (!value) return true; // Optional field
+        return value >= '1840-01-01';
+      })
     }),
     otherwise: () => yup.mixed().notRequired()
   }),
