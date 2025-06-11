@@ -388,7 +388,7 @@ const PersonRegistrationPage = () => {
     }
     
     // Transform natural person fields to uppercase
-    if (transformedData.natural_person) {
+    if (transformedData.natural_person && data.natural_person) {
       transformedData.natural_person.full_name_1 = data.natural_person.full_name_1?.toUpperCase() || '';
       transformedData.natural_person.full_name_2 = data.natural_person.full_name_2?.toUpperCase() || '';
       transformedData.natural_person.full_name_3 = data.natural_person.full_name_3?.toUpperCase() || '';
