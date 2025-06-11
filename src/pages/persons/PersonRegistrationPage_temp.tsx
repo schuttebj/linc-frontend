@@ -40,13 +40,12 @@ interface PersonRegistrationForm {
   // Contact Information
   email_address?: string;
   home_phone?: string;
-  
-  work_phone?: string;
-  
-  cell_phone_country_code?: string;
+  home_phone_number?: string;
+  work_phone_code?: string;
+  work_phone_number?: string;
   cell_phone?: string;
-  fax_phone?: string;
-  
+  fax_code?: string;
+  fax_number?: string;
   
   // Natural Person Details (if person_nature 01/02)
   natural_person?: {
@@ -65,7 +64,6 @@ interface PersonRegistrationForm {
     name_in_document?: string;
     alias_status: string;
     is_current: boolean;
-    id_document_expiry_date?: string; // For foreign documents
   }>;
   
   // Addresses (P00023 - Driver Address Particulars)
@@ -1158,10 +1156,4 @@ const PersonRegistrationPage = () => {
 };
 
 export default PersonRegistrationPage; 
-
-
-
-
-
-
 
