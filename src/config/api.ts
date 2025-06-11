@@ -38,6 +38,13 @@ export const API_ENDPOINTS = {
   idDocumentTypes: `${API_BASE_URL}/api/${API_VERSION}/persons/lookups/id-document-types`,
   personNatures: `${API_BASE_URL}/api/${API_VERSION}/persons/lookups/person-natures`,
   addressTypes: `${API_BASE_URL}/api/${API_VERSION}/persons/lookups/address-types`,
+  
+  // New lookup endpoints
+  provinces: `${API_BASE_URL}/api/${API_VERSION}/lookups/provinces`,
+  phoneCodes: `${API_BASE_URL}/api/${API_VERSION}/lookups/phone-codes`,
+  allLookups: `${API_BASE_URL}/api/${API_VERSION}/lookups/all`,
+  validatePhone: `${API_BASE_URL}/api/${API_VERSION}/lookups/validate-phone`,
+  validateProvince: `${API_BASE_URL}/api/${API_VERSION}/lookups/validate-province`,
 } as const;
 
 /**

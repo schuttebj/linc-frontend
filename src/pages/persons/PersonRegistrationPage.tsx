@@ -27,6 +27,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_BASE_URL } from '../../config/api';
+import lookupService, { Province, PhoneCode } from '../../config/lookupService';
 
 // Types based on backend models
 interface PersonRegistrationForm {
@@ -39,13 +40,11 @@ interface PersonRegistrationForm {
   
   // Contact Information
   email_address?: string;
-  home_phone_code?: string;
-  home_phone_number?: string;
-  work_phone_code?: string;
-  work_phone_number?: string;
+  home_phone?: string;
+  work_phone?: string;
+  cell_phone_country_code?: string;
   cell_phone?: string;
-  fax_code?: string;
-  fax_number?: string;
+  fax_phone?: string;
   
   // Natural Person Details (if person_nature 01/02)
   natural_person?: {
@@ -64,6 +63,7 @@ interface PersonRegistrationForm {
     name_in_document?: string;
     alias_status: string;
     is_current: boolean;
+    id_document_expiry_date?: string; // For foreign documents
   }>;
   
   // Addresses (P00023 - Driver Address Particulars)
@@ -144,28 +144,26 @@ const validationSchema = yup.object({
     .email('Invalid email format')
     .matches(/^[A-Z0-9@._\-]*$/i, 'Invalid email characters'),
   
-  // SCHAR3 format for phone numbers: SPACE, A-Z, 0-9
-  home_phone_code: yup.string()
-    .max(10, 'Maximum 10 characters')
-    .matches(/^[A-Z0-9\s]*$/i, 'Invalid phone code format'),
-  home_phone_number: yup.string()
-    .max(10, 'Maximum 10 characters')
-    .matches(/^[A-Z0-9\s]*$/i, 'Invalid phone number format'),
-  work_phone_code: yup.string()
-    .max(10, 'Maximum 10 characters')
-    .matches(/^[A-Z0-9\s]*$/i, 'Invalid phone code format'),
-  work_phone_number: yup.string()
-    .max(15, 'Maximum 15 characters')
-    .matches(/^[A-Z0-9\s]*$/i, 'Invalid phone number format'),
+  // Phone number validation
+  home_phone: yup.string()
+    .max(20, 'Maximum 20 characters')
+    .matches(/^[A-Z0-9\s\-\+\(\)]*$/i, 'Invalid phone format'),
+  work_phone: yup.string()
+    .max(20, 'Maximum 20 characters')
+    .matches(/^[A-Z0-9\s\-\+\(\)]*$/i, 'Invalid phone format'),
+  cell_phone_country_code: yup.string()
+    .matches(/^\+\d{1,4}$/, 'Invalid country code format'),
   cell_phone: yup.string()
     .max(15, 'Maximum 15 characters')
-    .matches(/^[A-Z0-9\s]*$/i, 'Invalid cell phone format'),
-  fax_code: yup.string()
-    .max(10, 'Maximum 10 characters')
-    .matches(/^[A-Z0-9\s]*$/i, 'Invalid fax code format'),
-  fax_number: yup.string()
-    .max(10, 'Maximum 10 characters')
-    .matches(/^[A-Z0-9\s]*$/i, 'Invalid fax number format'),
+    .matches(/^\d*$/, 'Cell phone must contain only digits')
+    .when('cell_phone_country_code', {
+      is: (val: string) => !!val,
+      then: () => yup.string().required('Cell phone number required when country code is provided'),
+      otherwise: () => yup.string()
+    }),
+  fax_phone: yup.string()
+    .max(20, 'Maximum 20 characters')
+    .matches(/^[A-Z0-9\s\-\+\(\)]*$/i, 'Invalid fax format'),
   
   // ID Documents validation - V00012: Only types 02,03 allowed for person introduction
   aliases: yup.array().of(
@@ -192,7 +190,17 @@ const validationSchema = yup.object({
           return true;
         }),
       country_of_issue: yup.string().required('Country of issue is required'),
-      alias_status: yup.string().required('Alias status is required')
+      alias_status: yup.string().required('Alias status is required'),
+      id_document_expiry_date: yup.string()
+        .test('future-date', 'Expiry date must be in the future', function(value) {
+          if (!value) return true; // Optional field
+          return new Date(value) > new Date();
+        })
+        .when('id_document_type_code', {
+          is: '03', // Foreign ID
+          then: () => yup.string().required('Expiry date is required for foreign documents'),
+          otherwise: () => yup.string()
+        })
     })
   ).min(1, 'At least one identification document is required'),
   
@@ -269,17 +277,7 @@ const NATIONALITIES = [
   // Add more as needed
 ];
 
-const PROVINCES = [
-  { value: 'WC', label: 'Western Cape' },
-  { value: 'GP', label: 'Gauteng' },
-  { value: 'KZN', label: 'KwaZulu-Natal' },
-  { value: 'EC', label: 'Eastern Cape' },
-  { value: 'FS', label: 'Free State' },
-  { value: 'LP', label: 'Limpopo' },
-  { value: 'MP', label: 'Mpumalanga' },
-  { value: 'NC', label: 'Northern Cape' },
-  { value: 'NW', label: 'North West' }
-];
+
 
 const PersonRegistrationPage = () => {
   // Auth
@@ -289,6 +287,11 @@ const PersonRegistrationPage = () => {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  
+  // Lookup data state
+  const [provinces, setProvinces] = useState<Province[]>([]);
+  const [phoneCodes, setPhoneCodes] = useState<PhoneCode[]>([]);
+  const [lookupLoading, setLookupLoading] = useState(true);
 
   const {
     control,
@@ -305,6 +308,7 @@ const PersonRegistrationPage = () => {
       person_nature: '',
       nationality_code: 'ZA',
       preferred_language: 'en',
+      cell_phone_country_code: '+27',
       aliases: [{
         id_document_type_code: '',
         id_document_number: '',
@@ -333,6 +337,41 @@ const PersonRegistrationPage = () => {
 
   const watchedPersonNature = watch('person_nature');
   const watchedAliases = watch('aliases');
+
+  // Load lookup data on component mount
+  useEffect(() => {
+    const loadLookupData = async () => {
+      try {
+        setLookupLoading(true);
+        const lookupData = await lookupService.getAllLookups();
+        setProvinces(lookupData.provinces);
+        setPhoneCodes(lookupData.phone_codes);
+      } catch (error) {
+        console.error('Failed to load lookup data:', error);
+        // Use fallback data
+        setProvinces([
+          { code: 'EC', name: 'Eastern Cape' },
+          { code: 'FS', name: 'Free State' },
+          { code: 'GP', name: 'Gauteng' },
+          { code: 'KZN', name: 'KwaZulu-Natal' },
+          { code: 'LP', name: 'Limpopo' },
+          { code: 'MP', name: 'Mpumalanga' },
+          { code: 'NC', name: 'Northern Cape' },
+          { code: 'NW', name: 'North West' },
+          { code: 'WC', name: 'Western Cape' }
+        ]);
+        setPhoneCodes([
+          { country_code: 'ZA', country_name: 'South Africa', phone_code: '+27' },
+          { country_code: 'US', country_name: 'United States', phone_code: '+1' },
+          { country_code: 'GB', country_name: 'United Kingdom', phone_code: '+44' }
+        ]);
+      } finally {
+        setLookupLoading(false);
+      }
+    };
+
+    loadLookupData();
+  }, []);
 
   // Auto-derive birth date and gender from RSA ID
   useEffect(() => {
@@ -676,7 +715,32 @@ const PersonRegistrationPage = () => {
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={3}>
+            <Controller
+              name="cell_phone_country_code"
+              control={control}
+              render={({ field }) => (
+                <Autocomplete
+                  {...field}
+                  options={phoneCodes}
+                  getOptionLabel={(option) => `${option.phone_code} ${option.country_name}`}
+                  value={phoneCodes.find(p => p.phone_code === field.value) || null}
+                  onChange={(_, value) => field.onChange(value?.phone_code || '')}
+                  loading={lookupLoading}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Country Code"
+                      error={!!errors.cell_phone_country_code}
+                      helperText={errors.cell_phone_country_code?.message || 'Select country'}
+                    />
+                  )}
+                />
+              )}
+            />
+          </Grid>
+
+          <Grid item xs={12} md={3}>
             <Controller
               name="cell_phone"
               control={control}
@@ -685,8 +749,43 @@ const PersonRegistrationPage = () => {
                   {...field}
                   fullWidth
                   label="Cell Phone"
-                  helperText="Cell phone number"
+                  error={!!errors.cell_phone}
+                  helperText={errors.cell_phone?.message || "Digits only (e.g., 821234567)"}
                   inputProps={{ maxLength: 15 }}
+                />
+              )}
+            />
+          </Grid>
+
+          <Grid item xs={12} md={3}>
+            <Controller
+              name="home_phone"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label="Home Phone"
+                  error={!!errors.home_phone}
+                  helperText={errors.home_phone?.message || "Home phone number"}
+                  inputProps={{ maxLength: 20 }}
+                />
+              )}
+            />
+          </Grid>
+
+          <Grid item xs={12} md={3}>
+            <Controller
+              name="work_phone"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label="Work Phone"
+                  error={!!errors.work_phone}
+                  helperText={errors.work_phone?.message || "Work phone number"}
+                  inputProps={{ maxLength: 20 }}
                 />
               )}
             />
@@ -713,6 +812,23 @@ const PersonRegistrationPage = () => {
                     <MenuItem value="nso">Sepedi</MenuItem>
                   </Select>
                 </FormControl>
+              )}
+            />
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Controller
+              name="fax_phone"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label="Fax Number"
+                  error={!!errors.fax_phone}
+                  helperText={errors.fax_phone?.message || "Fax number"}
+                  inputProps={{ maxLength: 20 }}
+                />
               )}
             />
           </Grid>
@@ -787,7 +903,7 @@ const PersonRegistrationPage = () => {
                 />
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid item xs={12} md={6}>
                 <Controller
                   name={`aliases.${index}.name_in_document`}
                   control={control}
@@ -800,6 +916,33 @@ const PersonRegistrationPage = () => {
                       inputProps={{ maxLength: 200 }}
                     />
                   )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name={`aliases.${index}.id_document_expiry_date`}
+                  control={control}
+                  render={({ field }) => {
+                    const currentAlias = watchedAliases[index];
+                    const isForeignId = currentAlias?.id_document_type_code === '03';
+                    
+                    return (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        type="date"
+                        label={isForeignId ? "Expiry Date *" : "Expiry Date"}
+                        InputLabelProps={{ shrink: true }}
+                        error={!!errors.aliases?.[index]?.id_document_expiry_date}
+                        helperText={
+                          errors.aliases?.[index]?.id_document_expiry_date?.message || 
+                          (isForeignId ? "Required for foreign documents" : "Optional for RSA documents")
+                        }
+                        disabled={!isForeignId}
+                      />
+                    );
+                  }}
                 />
               </Grid>
 
@@ -966,15 +1109,17 @@ const PersonRegistrationPage = () => {
                   render={({ field }) => (
                     <Autocomplete
                       {...field}
-                      options={PROVINCES}
-                      getOptionLabel={(option) => option.label}
-                      value={PROVINCES.find(p => p.value === field.value) || null}
-                      onChange={(_, value) => field.onChange(value?.value || '')}
+                      options={provinces}
+                      getOptionLabel={(option) => option.name}
+                      value={provinces.find(p => p.code === field.value) || null}
+                      onChange={(_, value) => field.onChange(value?.code || '')}
+                      loading={lookupLoading}
                       renderInput={(params) => (
                         <TextField
                           {...params}
                           label="Province"
-                          helperText="Select province"
+                          error={!!errors.addresses?.[index]?.province_code}
+                          helperText={errors.addresses?.[index]?.province_code?.message || "Select province"}
                         />
                       )}
                     />
@@ -1033,6 +1178,21 @@ const PersonRegistrationPage = () => {
               <Typography><strong>Full Name:</strong> {formData.natural_person.full_name_1} {formData.natural_person.full_name_2}</Typography>
             )}
             <Typography><strong>Nationality:</strong> {NATIONALITIES.find(n => n.value === formData.nationality_code)?.label}</Typography>
+            {formData.email_address && (
+              <Typography><strong>Email:</strong> {formData.email_address}</Typography>
+            )}
+            {formData.cell_phone_country_code && formData.cell_phone && (
+              <Typography><strong>Cell Phone:</strong> {lookupService.formatPhoneNumber(formData.cell_phone_country_code, formData.cell_phone)}</Typography>
+            )}
+            {formData.home_phone && (
+              <Typography><strong>Home Phone:</strong> {formData.home_phone}</Typography>
+            )}
+            {formData.work_phone && (
+              <Typography><strong>Work Phone:</strong> {formData.work_phone}</Typography>
+            )}
+            {formData.fax_phone && (
+              <Typography><strong>Fax:</strong> {formData.fax_phone}</Typography>
+            )}
           </Box>
 
           <Box sx={{ mb: 3 }}>
@@ -1043,6 +1203,7 @@ const PersonRegistrationPage = () => {
               <Box key={index} sx={{ ml: 2 }}>
                 <Typography>
                   <strong>{ID_DOCUMENT_TYPES.find(t => t.value === alias.id_document_type_code)?.label}:</strong> {alias.id_document_number}
+                  {alias.id_document_expiry_date && ` (Expires: ${alias.id_document_expiry_date})`}
                 </Typography>
               </Box>
             ))}
@@ -1057,7 +1218,9 @@ const PersonRegistrationPage = () => {
                 <Typography>
                   <strong>{address.address_type === 'street' ? 'Street' : 'Postal'} Address:</strong> {address.address_line_1}
                   {address.address_line_4 && `, ${address.address_line_4}`}
+                  {address.address_line_5 && `, ${address.address_line_5}`}
                   {address.postal_code && `, ${address.postal_code}`}
+                  {address.province_code && `, ${provinces.find(p => p.code === address.province_code)?.name || address.province_code}`}
                 </Typography>
               </Box>
             ))}

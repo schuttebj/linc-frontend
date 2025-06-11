@@ -57,13 +57,11 @@ interface PersonManagementForm {
   
   // Contact Information  
   email_address?: string;
-  home_phone_code?: string;
-  home_phone_number?: string;
-  work_phone_code?: string;
-  work_phone_number?: string;
+  home_phone?: string;
+  work_phone?: string;
+  cell_phone_country_code?: string;
   cell_phone?: string;
-  fax_code?: string;
-  fax_number?: string;
+  fax_phone?: string;
   
   // Natural Person Details
   natural_person?: {
@@ -82,6 +80,7 @@ interface PersonManagementForm {
     name_in_document?: string;
     alias_status: string;
     is_current: boolean;
+    id_document_expiry_date?: string;
   }>;
   
   // Addresses
