@@ -374,11 +374,64 @@ const PersonRegistrationPage = () => {
     'Review & Submit'
   ];
 
+  // Transform data to eNaTIS standards before submission
+  const transformDataForSubmission = (data: PersonRegistrationForm): PersonRegistrationForm => {
+    const transformedData = { ...data };
+    
+    // eNaTIS UPPERCASE requirement: All alphabetic data must be uppercase
+    transformedData.business_or_surname = data.business_or_surname?.toUpperCase() || '';
+    transformedData.initials = data.initials?.toUpperCase() || '';
+    
+    // V00001: Remove initials for non-natural persons (safety check)
+    if (!['01', '02'].includes(data.person_nature)) {
+      transformedData.initials = '';
+    }
+    
+    // Transform natural person fields to uppercase
+    if (transformedData.natural_person) {
+      transformedData.natural_person.full_name_1 = data.natural_person.full_name_1?.toUpperCase() || '';
+      transformedData.natural_person.full_name_2 = data.natural_person.full_name_2?.toUpperCase() || '';
+      transformedData.natural_person.full_name_3 = data.natural_person.full_name_3?.toUpperCase() || '';
+    }
+    
+    // Transform aliases to uppercase (SCHAR2 format)
+    transformedData.aliases = data.aliases.map(alias => ({
+      ...alias,
+      id_document_number: alias.id_document_number?.toUpperCase() || '',
+      name_in_document: alias.name_in_document?.toUpperCase() || '',
+      country_of_issue: alias.country_of_issue?.toUpperCase() || 'ZA'
+    }));
+    
+    // Transform addresses to uppercase (SCHAR1 format)
+    transformedData.addresses = data.addresses.map(address => ({
+      ...address,
+      address_line_1: address.address_line_1?.toUpperCase() || '',
+      address_line_2: address.address_line_2?.toUpperCase() || '',
+      address_line_3: address.address_line_3?.toUpperCase() || '',
+      address_line_4: address.address_line_4?.toUpperCase() || '',
+      address_line_5: address.address_line_5?.toUpperCase() || '',
+      country_code: address.country_code?.toUpperCase() || 'ZA',
+      province_code: address.province_code?.toUpperCase() || ''
+    }));
+    
+    return transformedData;
+  };
+
   const onSubmit = async (data: PersonRegistrationForm) => {
     setSubmitLoading(true);
     setValidationErrors([]);
     
     try {
+      // Transform data to eNaTIS standards
+      const transformedData = transformDataForSubmission(data);
+      
+      // Additional validation before submission
+      if (transformedData.initials && !['01', '02'].includes(transformedData.person_nature)) {
+        throw new Error('Initials are only allowed for natural persons (Male/Female)');
+      }
+      
+      console.log('Submitting transformed data:', transformedData);
+      
       // Call person creation API
       const response = await fetch(`${API_BASE_URL}/api/v1/persons`, {
         method: 'POST',
@@ -386,7 +439,7 @@ const PersonRegistrationPage = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(transformedData)
       });
       
       if (!response.ok) {
@@ -458,11 +511,12 @@ const PersonRegistrationPage = () => {
               render={({ field }) => (
                 <TextField
                   {...field}
+                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                   fullWidth
                   label={['01', '02'].includes(watchedPersonNature) ? 'Surname *' : 'Business Name *'}
                   error={!!errors.business_or_surname}
-                  helperText={errors.business_or_surname?.message || 'Business name or surname (V00043)'}
-                  inputProps={{ maxLength: 32 }}
+                  helperText={errors.business_or_surname?.message || 'Business name or surname (V00043) - Auto-converted to UPPERCASE'}
+                  inputProps={{ maxLength: 32, style: { textTransform: 'uppercase' } }}
                 />
               )}
             />
@@ -478,10 +532,11 @@ const PersonRegistrationPage = () => {
                   render={({ field }) => (
                     <TextField
                       {...field}
+                      onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                       fullWidth
                       label="Initials *"
                       error={!!errors.initials}
-                      helperText={errors.initials?.message || 'Initials (max 3 characters) - V00051: Mandatory for natural persons'}
+                      helperText={errors.initials?.message || 'Initials (max 3 characters) - V00051: Mandatory for natural persons - Auto-converted to UPPERCASE'}
                       inputProps={{ maxLength: 3, style: { textTransform: 'uppercase' } }}
                     />
                   )}
@@ -493,14 +548,15 @@ const PersonRegistrationPage = () => {
                   name="natural_person.full_name_1"
                   control={control}
                   render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label="First Name *"
-                      error={!!errors.natural_person?.full_name_1}
-                      helperText={errors.natural_person?.full_name_1?.message || 'First/given name (V00056)'}
-                      inputProps={{ maxLength: 32 }}
-                    />
+                                      <TextField
+                    {...field}
+                    onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                    fullWidth
+                    label="First Name *"
+                    error={!!errors.natural_person?.full_name_1}
+                    helperText={errors.natural_person?.full_name_1?.message || 'First/given name (V00056) - Auto-converted to UPPERCASE'}
+                    inputProps={{ maxLength: 32, style: { textTransform: 'uppercase' } }}
+                  />
                   )}
                 />
               </Grid>
