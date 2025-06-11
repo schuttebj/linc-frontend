@@ -368,9 +368,16 @@ const PersonManagementPage = () => {
     const month = parseInt(idNumber.substring(2, 4));
     const day = parseInt(idNumber.substring(4, 6));
     
+    // Validate extracted values
+    if (month < 1 || month > 12 || day < 1 || day > 31) {
+      return { gender: null, birthDate: null };
+    }
+    
     // Century logic: if year > 21, assume 1900s, else 2000s (adjustable based on system date)
     const fullYear = year > 21 ? 1900 + year : 2000 + year;
-    const birthDate = new Date(fullYear, month - 1, day);
+    
+    // Create date string directly to avoid timezone issues
+    const birthDateString = `${fullYear}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
     
     // V00034 - Extract gender from digits 7-10 (position 6-9 in 0-based indexing)
     const genderDigits = parseInt(idNumber.substring(6, 10));
@@ -378,7 +385,7 @@ const PersonManagementPage = () => {
     
     return {
       gender,
-      birthDate: birthDate.toISOString().split('T')[0]
+      birthDate: birthDateString
     };
   };
 
@@ -567,25 +574,49 @@ const PersonManagementPage = () => {
                 <Controller
                   name="id_document_number"
                   control={lookupForm.control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label="ID Document Number *"
-                      placeholder="Enter ID document number"
-                      error={!!lookupForm.formState.errors.id_document_number}
-                      helperText={lookupForm.formState.errors.id_document_number?.message || 'Enter the identification number (V00013)'}
-                      InputProps={{
-                        endAdornment: field.value && (
-                          <InputAdornment position="end">
-                            <IconButton onClick={() => lookupForm.setValue('id_document_number', '')} size="small">
-                              <ClearIcon />
-                            </IconButton>
-                          </InputAdornment>
-                        )
-                      }}
-                    />
-                  )}
+                  render={({ field }) => {
+                    const selectedType = lookupForm.watch('id_document_type_code');
+                    const isRSAID = selectedType === '02';
+                    
+                    return (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        label="ID Document Number *"
+                        placeholder={isRSAID ? "Enter 13-digit RSA ID number" : "Enter ID document number"}
+                        error={!!lookupForm.formState.errors.id_document_number}
+                        helperText={
+                          lookupForm.formState.errors.id_document_number?.message || 
+                          (isRSAID ? 'RSA ID must be 13 digits (numbers only) - V00017, V00018' : 'Enter the identification number (V00013)')
+                        }
+                        inputProps={{
+                          maxLength: isRSAID ? 13 : undefined,
+                          pattern: isRSAID ? '[0-9]*' : undefined,
+                          inputMode: isRSAID ? 'numeric' : 'text'
+                        }}
+                        onChange={(e) => {
+                          let value = e.target.value;
+                          // For RSA ID, only allow numbers
+                          if (isRSAID) {
+                            value = value.replace(/[^0-9]/g, '');
+                            if (value.length > 13) {
+                              value = value.substring(0, 13);
+                            }
+                          }
+                          field.onChange(value);
+                        }}
+                        InputProps={{
+                          endAdornment: field.value && (
+                            <InputAdornment position="end">
+                              <IconButton onClick={() => lookupForm.setValue('id_document_number', '')} size="small">
+                                <ClearIcon />
+                              </IconButton>
+                            </InputAdornment>
+                          )
+                        }}
+                      />
+                    );
+                  }}
                 />
               </Grid>
 

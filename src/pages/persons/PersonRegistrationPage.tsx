@@ -26,6 +26,7 @@ import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useAuth } from '../../contexts/AuthContext';
+import { API_BASE_URL } from '../../config/api';
 
 // Types based on backend models
 interface PersonRegistrationForm {
@@ -80,33 +81,89 @@ interface PersonRegistrationForm {
   }>;
 }
 
-// Validation schema based on business rules V00001-V00100
+// eNaTIS Field Format Validation based on Transaction 57 specifications
 const validationSchema = yup.object({
-  // Core fields with validation codes
-  business_or_surname: yup.string().required('Business name or surname is mandatory (V00043)').max(32),
+  // SCHAR1 format: SPACE, A-Z, 0-9, -, &, (, ), ', Ë, É, Ä, Ö, Ü, Ç (max 32)
+  business_or_surname: yup.string()
+    .required('Business name or surname is mandatory (V00043)')
+    .max(32, 'Maximum 32 characters')
+    .matches(/^[A-Z0-9\s\-&()'ËÉÄÖÜÇ]*$/i, 'Invalid characters. Use only letters, numbers, and basic punctuation'),
+  
   person_nature: yup.string().required('Person nature is mandatory (V00034)'),
   nationality_code: yup.string().required('Nationality is mandatory'),
+  
+  // ALPHA format: A-Z only (max 3)
+  initials: yup.string()
+    .max(3, 'Maximum 3 characters')
+    .matches(/^[A-Z]*$/, 'Initials must be uppercase letters only')
+    .when('person_nature', {
+      is: (val: string) => ['01', '02'].includes(val),
+      then: () => yup.string().required('Initials are mandatory for natural persons (V00051)'),
+      otherwise: () => yup.string()
+    }),
   
   // Natural person validation
   natural_person: yup.object().when('person_nature', {
     is: (val: string) => ['01', '02'].includes(val),
     then: () => yup.object({
-      full_name_1: yup.string().required('First name is mandatory for natural persons (V00056)').max(32),
-      full_name_2: yup.string().max(32),
-      full_name_3: yup.string().max(32),
+      // SCHAR1 format (max 32)
+      full_name_1: yup.string()
+        .required('First name is mandatory for natural persons (V00056)')
+        .max(32, 'Maximum 32 characters')
+        .matches(/^[A-Z0-9\s\-&()'ËÉÄÖÜÇ]*$/i, 'Invalid characters in first name'),
+      full_name_2: yup.string()
+        .max(32, 'Maximum 32 characters')
+        .matches(/^[A-Z0-9\s\-&()'ËÉÄÖÜÇ]*$/i, 'Invalid characters in middle name'),
+      full_name_3: yup.string()
+        .max(32, 'Maximum 32 characters')
+        .matches(/^[A-Z0-9\s\-&()'ËÉÄÖÜÇ]*$/i, 'Invalid characters in last name'),
+      birth_date: yup.string().min('1840-01-01', 'Date must be after 1840-01-01')
     }),
     otherwise: () => yup.mixed().notRequired()
   }),
   
-  // Aliases validation - at least one required
+  // SCHAR4 format for email: ., A-Z, 0-9, @, _, - (max 50)
+  email_address: yup.string()
+    .max(50, 'Maximum 50 characters')
+    .email('Invalid email format')
+    .matches(/^[A-Z0-9@._\-]*$/i, 'Invalid email characters'),
+  
+  // SCHAR3 format for phone numbers: SPACE, A-Z, 0-9
+  home_phone_code: yup.string()
+    .max(10, 'Maximum 10 characters')
+    .matches(/^[A-Z0-9\s]*$/i, 'Invalid phone code format'),
+  home_phone_number: yup.string()
+    .max(10, 'Maximum 10 characters')
+    .matches(/^[A-Z0-9\s]*$/i, 'Invalid phone number format'),
+  work_phone_code: yup.string()
+    .max(10, 'Maximum 10 characters')
+    .matches(/^[A-Z0-9\s]*$/i, 'Invalid phone code format'),
+  work_phone_number: yup.string()
+    .max(15, 'Maximum 15 characters')
+    .matches(/^[A-Z0-9\s]*$/i, 'Invalid phone number format'),
+  cell_phone: yup.string()
+    .max(15, 'Maximum 15 characters')
+    .matches(/^[A-Z0-9\s]*$/i, 'Invalid cell phone format'),
+  fax_code: yup.string()
+    .max(10, 'Maximum 10 characters')
+    .matches(/^[A-Z0-9\s]*$/i, 'Invalid fax code format'),
+  fax_number: yup.string()
+    .max(10, 'Maximum 10 characters')
+    .matches(/^[A-Z0-9\s]*$/i, 'Invalid fax number format'),
+  
+  // ID Documents validation - V00012: Only types 02,03 allowed for person introduction
   aliases: yup.array().of(
     yup.object({
-      id_document_type_code: yup.string().required('Identification type is mandatory (V00001)'),
+      id_document_type_code: yup.string()
+        .required('Identification type is mandatory (V00001)')
+        .oneOf(['02', '03'], 'Only RSA ID (02) and Foreign ID (03) allowed for person introduction (V00012)'),
+      // SCHAR2 format: A-Z, 0-9 (length 13 for specific types)
       id_document_number: yup.string()
         .required('Identification number is mandatory (V00013)')
-        .test('length-validation', 'This type requires 13 characters (V00018)', function(value) {
+        .matches(/^[A-Z0-9]*$/, 'Invalid ID format. Use only letters and numbers (SCHAR2)')
+        .test('length-validation', 'RSA ID must be exactly 13 characters (V00018)', function(value) {
           const { id_document_type_code } = this.parent;
-          if (['01', '02', '04'].includes(id_document_type_code)) {
+          if (id_document_type_code === '02') {
             return value?.length === 13;
           }
           return true;
@@ -114,29 +171,53 @@ const validationSchema = yup.object({
         .test('numeric-validation', 'RSA ID must be numeric only (V00017)', function(value) {
           const { id_document_type_code } = this.parent;
           if (id_document_type_code === '02') {
-            return /^\d+$/.test(value || '');
+            return /^\d{13}$/.test(value || '');
           }
           return true;
         }),
-      country_of_issue: yup.string().required(),
-      alias_status: yup.string().required()
+      country_of_issue: yup.string().required('Country of issue is required'),
+      alias_status: yup.string().required('Alias status is required')
     })
   ).min(1, 'At least one identification document is required'),
   
-  // Address validation
+  // Address validation with eNaTIS formats
   addresses: yup.array().of(
     yup.object({
-      address_type: yup.string().required(),
-      address_line_1: yup.string().when('address_type', {
-        is: 'postal',
-        then: () => yup.string().required('Address line 1 is mandatory for postal addresses (V00095)'),
-        otherwise: () => yup.string()
-      }),
+      address_type: yup.string().required('Address type is required'),
+      // SCHAR1 format (max 35)
+      address_line_1: yup.string()
+        .max(35, 'Maximum 35 characters')
+        .matches(/^[A-Z0-9\s\-&()'ËÉÄÖÜÇ]*$/i, 'Invalid address characters')
+        .when('address_type', {
+          is: 'postal',
+          then: () => yup.string().required('Address line 1 is mandatory for postal addresses (V00095)'),
+          otherwise: () => yup.string().when('$isStreetAddress', {
+            is: true,
+            then: () => yup.string().required('Address line 1 is mandatory for street addresses (V00101)')
+          })
+        }),
+      address_line_2: yup.string()
+        .max(35, 'Maximum 35 characters')
+        .matches(/^[A-Z0-9\s\-&()'ËÉÄÖÜÇ]*$/i, 'Invalid address characters'),
+      address_line_3: yup.string()
+        .max(35, 'Maximum 35 characters')
+        .matches(/^[A-Z0-9\s\-&()'ËÉÄÖÜÇ]*$/i, 'Invalid address characters'),
+      address_line_4: yup.string()
+        .max(35, 'Maximum 35 characters')
+        .matches(/^[A-Z0-9\s\-&()'ËÉÄÖÜÇ]*$/i, 'Invalid address characters'),
+      address_line_5: yup.string()
+        .max(35, 'Maximum 35 characters')
+        .matches(/^[A-Z0-9\s\-&()'ËÉÄÖÜÇ]*$/i, 'Invalid address characters'),
+      // NUM format: 0-9 only (exactly 4 digits)
       postal_code: yup.string()
         .matches(/^\d{4}$/, 'Postal code must be exactly 4 digits (V00098)')
         .when(['address_type', 'address_line_1'], {
-          is: (type: string, line1: string) => type === 'street' && line1,
-          then: () => yup.string().required('Postal code is mandatory when street address is provided (V00107)')
+          is: (type: string, line1: string) => type === 'postal' && line1,
+          then: () => yup.string().required('Postal code is mandatory for postal addresses'),
+          otherwise: () => yup.string().when(['address_type', 'address_line_1'], {
+            is: (type: string, line1: string) => type === 'street' && line1,
+            then: () => yup.string().required('Postal code is mandatory when street address is provided (V00107/V00108)')
+          })
         })
     })
   )
@@ -276,7 +357,7 @@ const PersonRegistrationPage = () => {
     
     try {
       // Call person creation API
-      const response = await fetch('/api/v1/persons/', {
+      const response = await fetch(`${API_BASE_URL}/api/v1/persons`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
