@@ -25,6 +25,7 @@ import {
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Types based on backend models
 interface PersonRegistrationForm {
@@ -184,6 +185,9 @@ const PROVINCES = [
 ];
 
 const PersonRegistrationPage = () => {
+  // Auth
+  const { accessToken } = useAuth();
+  
   const [currentStep, setCurrentStep] = useState(0);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -276,7 +280,7 @@ const PersonRegistrationPage = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify(data)
       });

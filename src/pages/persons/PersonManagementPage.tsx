@@ -1,4 +1,9 @@
-import { useState } from 'react';
+/**
+ * Person Management Page - Multi-step registration/editing
+ * Implements complete person lifecycle management with validation
+ */
+
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -33,6 +38,7 @@ import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { API_ENDPOINTS } from '../../config/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Types
 interface PersonLookupForm {
@@ -219,6 +225,9 @@ const steps = [
 ];
 
 const PersonManagementPage = () => {
+  // Auth
+  const { accessToken } = useAuth();
+  
   // State management
   const [currentStep, setCurrentStep] = useState(0);
   const [personFound, setPersonFound] = useState<ExistingPerson | null>(null);
@@ -281,7 +290,7 @@ const PersonManagementPage = () => {
       // V00033 - Check if person exists first
       const existenceResponse = await fetch(API_ENDPOINTS.personCheckExistence(data.id_document_type_code, data.id_document_number), {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${accessToken}`
         }
       });
       
@@ -297,9 +306,9 @@ const PersonManagementPage = () => {
         }
       }
       
-      const response = await fetch(`http://localhost:8000/api/v1/persons/search/by-id-number/${data.id_document_number}`, {
+      const response = await fetch(API_ENDPOINTS.personSearchById(data.id_document_number), {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${accessToken}`
         }
       });
 
@@ -328,8 +337,6 @@ const PersonManagementPage = () => {
       setLookupLoading(false);
     }
   };
-
-
 
   const setupNewPersonForm = (lookupData: PersonLookupForm) => {
     // Pre-populate with lookup data
@@ -448,7 +455,7 @@ const PersonManagementPage = () => {
         method,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify(formData)
       });
@@ -678,7 +685,7 @@ const PersonManagementPage = () => {
             />
           </Grid>
 
-                        {/* Initials - MANDATORY for natural persons per V00051 */}
+          {/* Initials - MANDATORY for natural persons per V00051 */}
           {['01', '02'].includes(watchedPersonNature) && (
             <Grid item xs={12} md={6}>
               <Controller

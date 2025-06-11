@@ -44,6 +44,7 @@ import {
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { API_ENDPOINTS } from '../../config/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Types based on backend models
 interface PersonSearchForm {
@@ -156,6 +157,9 @@ const PROVINCES = [
 ];
 
 const PersonSearchPage = () => {
+  // Auth
+  const { accessToken } = useAuth();
+  
   const [searchResults, setSearchResults] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -197,7 +201,7 @@ const PersonSearchPage = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify(searchParams)
       });
@@ -225,7 +229,7 @@ const PersonSearchPage = () => {
     try {
       const response = await fetch(API_ENDPOINTS.personSearchById(idNumber), {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${accessToken}`
         }
       });
       
