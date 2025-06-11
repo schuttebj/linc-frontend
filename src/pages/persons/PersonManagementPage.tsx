@@ -806,6 +806,23 @@ const PersonManagementPage = () => {
                   render={({ field }) => {
                     const selectedType = lookupForm.watch('id_document_type_code');
                     const isRSAID = selectedType === '02';
+                    const currentValue = field.value || '';
+                    
+                    // Real-time validation feedback for RSA ID
+                    let validationColor = 'default';
+                    let validationIcon = null;
+                    let helperText = lookupForm.formState.errors.id_document_number?.message;
+                    
+                    if (isRSAID && currentValue.length === 13) {
+                      const isValid = validateRSAID(currentValue);
+                      validationColor = isValid ? 'success' : 'error';
+                      validationIcon = isValid ? '✓' : '✗';
+                      if (!helperText) {
+                        helperText = isValid ? 'Valid RSA ID number' : 'Invalid RSA ID - check digit validation failed';
+                      }
+                    } else if (!helperText) {
+                      helperText = isRSAID ? 'RSA ID must be 13 digits (numbers only) - V00017, V00018' : 'Enter the identification number (V00013)';
+                    }
                     
                     return (
                       <TextField
@@ -814,10 +831,8 @@ const PersonManagementPage = () => {
                         label="ID Document Number *"
                         placeholder={isRSAID ? "Enter 13-digit RSA ID number" : "Enter ID document number"}
                         error={!!lookupForm.formState.errors.id_document_number}
-                        helperText={
-                          lookupForm.formState.errors.id_document_number?.message || 
-                          (isRSAID ? 'RSA ID must be 13 digits (numbers only) - V00017, V00018' : 'Enter the identification number (V00013)')
-                        }
+                        helperText={helperText}
+                        color={validationColor as any}
                         inputProps={{
                           maxLength: isRSAID ? 13 : undefined,
                           pattern: isRSAID ? '[0-9]*' : undefined,
@@ -835,11 +850,22 @@ const PersonManagementPage = () => {
                           field.onChange(value);
                         }}
                         InputProps={{
-                          endAdornment: field.value && (
+                          endAdornment: (
                             <InputAdornment position="end">
-                              <IconButton onClick={() => lookupForm.setValue('id_document_number', '')} size="small">
-                                <ClearIcon />
-                              </IconButton>
+                              {validationIcon && (
+                                <span style={{ 
+                                  color: validationColor === 'success' ? 'green' : 'red',
+                                  marginRight: '8px',
+                                  fontWeight: 'bold'
+                                }}>
+                                  {validationIcon}
+                                </span>
+                              )}
+                              {field.value && (
+                                <IconButton onClick={() => lookupForm.setValue('id_document_number', '')} size="small">
+                                  <ClearIcon />
+                                </IconButton>
+                              )}
                             </InputAdornment>
                           )
                         }}
