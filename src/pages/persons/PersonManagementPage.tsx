@@ -39,6 +39,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { API_ENDPOINTS } from '../../config/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { API_BASE_URL } from '../../config/api';
 
 // Types
 interface PersonLookupForm {
@@ -455,7 +456,7 @@ const PersonManagementPage = () => {
     
     try {
       const formData = personForm.getValues();
-      const url = isNewPerson ? '/api/v1/persons/' : `/api/v1/persons/${personFound?.id}`;
+      const url = isNewPerson ? `${API_BASE_URL}/api/v1/persons` : `${API_BASE_URL}/api/v1/persons/${personFound?.id}`;
       const method = isNewPerson ? 'POST' : 'PUT';
       
       const response = await fetch(url, {
