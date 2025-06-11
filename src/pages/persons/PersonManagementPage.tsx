@@ -676,8 +676,8 @@ const PersonManagementPage = () => {
       if (formData.aliases) {
         formData.aliases = formData.aliases.map(alias => ({
           ...alias,
-          // Remove empty expiry date or convert to null
-          id_document_expiry_date: alias.id_document_expiry_date?.trim() || null
+          // Remove empty expiry date or convert to undefined
+          id_document_expiry_date: alias.id_document_expiry_date?.trim() || undefined
         }));
       }
       
