@@ -3,7 +3,7 @@
  * Implements complete person lifecycle management with validation
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Typography,
