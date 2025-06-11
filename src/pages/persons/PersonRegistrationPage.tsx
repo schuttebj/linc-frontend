@@ -378,14 +378,17 @@ const PersonRegistrationPage = () => {
   const transformDataForSubmission = (data: PersonRegistrationForm): PersonRegistrationForm => {
     const transformedData = { ...data };
     
+    // V00001: CRITICAL - Remove initials for non-natural persons FIRST
+    if (!['01', '02'].includes(data.person_nature)) {
+      console.log('🚫 Clearing initials for non-natural person type:', data.person_nature);
+      transformedData.initials = '';
+    } else {
+      // Only apply uppercase transformation for natural persons
+      transformedData.initials = data.initials?.toUpperCase() || '';
+    }
+    
     // eNaTIS UPPERCASE requirement: All alphabetic data must be uppercase
     transformedData.business_or_surname = data.business_or_surname?.toUpperCase() || '';
-    transformedData.initials = data.initials?.toUpperCase() || '';
-    
-    // V00001: Remove initials for non-natural persons (safety check)
-    if (!['01', '02'].includes(data.person_nature)) {
-      transformedData.initials = '';
-    }
     
     // Transform natural person fields to uppercase
     if (transformedData.natural_person && data.natural_person) {
@@ -422,15 +425,42 @@ const PersonRegistrationPage = () => {
     setValidationErrors([]);
     
     try {
+      // Debug: Log original form data
+      console.log('🔍 Original form data:', data);
+      console.log('🔍 Person nature:', data.person_nature);
+      console.log('🔍 Initials:', data.initials);
+      
+      // Critical validation BEFORE transformation
+      if (!data.person_nature) {
+        throw new Error('Person nature must be selected before submitting');
+      }
+      
+      if (data.initials && data.initials.trim() !== '' && !['01', '02'].includes(data.person_nature)) {
+        const personTypeNames = {
+          '01': 'Male',
+          '02': 'Female', 
+          '03': 'Company',
+          '10': 'Close Corporation',
+          '11': 'Trust',
+          '12': 'Partnership',
+          '13': 'Sole Proprietorship'
+        };
+        const currentType = personTypeNames[data.person_nature as keyof typeof personTypeNames] || data.person_nature;
+        throw new Error(`Initials cannot be provided for ${currentType}. Initials are only allowed for natural persons (Male/Female).`);
+      }
+      
       // Transform data to eNaTIS standards
       const transformedData = transformDataForSubmission(data);
       
-      // Additional validation before submission
-      if (transformedData.initials && !['01', '02'].includes(transformedData.person_nature)) {
-        throw new Error('Initials are only allowed for natural persons (Male/Female)');
-      }
+      // Debug: Log transformed data
+      console.log('🔍 Transformed data:', transformedData);
+      console.log('🔍 Transformed person nature:', transformedData.person_nature);
+      console.log('🔍 Transformed initials:', transformedData.initials);
       
-      console.log('Submitting transformed data:', transformedData);
+      // Final safety check after transformation
+      if (transformedData.initials && !['01', '02'].includes(transformedData.person_nature)) {
+        throw new Error('CRITICAL: Initials still present for non-natural person after transformation');
+      }
       
       // Call person creation API
       const response = await fetch(`${API_BASE_URL}/api/v1/persons`, {
@@ -444,6 +474,7 @@ const PersonRegistrationPage = () => {
       
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('🚨 Backend error response:', errorData);
         throw new Error(errorData.detail || 'Registration failed');
       }
       
@@ -452,7 +483,7 @@ const PersonRegistrationPage = () => {
       setCurrentStep(0);
       
     } catch (error: any) {
-      console.error('Registration error:', error);
+      console.error('🚨 Registration error:', error);
       if (error.message.includes('Validation failed:')) {
         const validationParts = error.message.split('Validation failed: ')[1].split('; ');
         setValidationErrors(validationParts);
