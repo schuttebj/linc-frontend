@@ -832,7 +832,7 @@ const PersonManagementPage = () => {
                         placeholder={isRSAID ? "Enter 13-digit RSA ID number" : "Enter ID document number"}
                         error={!!lookupForm.formState.errors.id_document_number}
                         helperText={helperText}
-                        color={validationColor as any}
+
                         inputProps={{
                           maxLength: isRSAID ? 13 : undefined,
                           pattern: isRSAID ? '[0-9]*' : undefined,
