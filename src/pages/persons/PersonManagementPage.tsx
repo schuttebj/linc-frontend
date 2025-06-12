@@ -554,6 +554,8 @@ const PersonManagementPage = () => {
         
         if (existenceCheck.exists) {
           // V00033 - Person already exists - ERROR and STOP
+          console.log('Person found via existence check:', existenceCheck.person_summary);
+          console.log('Existence check person keys:', Object.keys(existenceCheck.person_summary || {}));
           setPersonFound(existenceCheck.person_summary);
           setIsNewPerson(false);
           markStepValid(0, false); // Mark as invalid to prevent progression
@@ -573,6 +575,8 @@ const PersonManagementPage = () => {
         if (results && results.length > 0) {
           // V00033 - Person already exists - ERROR and STOP
           const person = results[0];
+          console.log('Person found via search:', person);
+          console.log('Search result person keys:', Object.keys(person || {}));
           setPersonFound(person);
           setIsNewPerson(false);
           markStepValid(0, false); // Mark as invalid to prevent progression
@@ -772,22 +776,27 @@ const PersonManagementPage = () => {
 
   const handleEditPerson = (person: ExistingPerson) => {
     console.log('Starting edit for person:', person);
+    console.log('Person object keys:', Object.keys(person));
+    console.log('Person business_or_surname:', person.business_or_surname);
+    console.log('Person natural_person:', person.natural_person);
+    console.log('Person aliases:', person.aliases);
+    console.log('Person addresses:', person.addresses);
     
     // Set edit mode
     setIsEditMode(true);
     
     // Pre-populate form with existing person data for editing
     const personData: PersonManagementForm = {
-      business_or_surname: person.business_or_surname || '',
-      initials: person.initials || '',
-      person_nature: person.person_nature || '',
-      nationality_code: person.nationality_code || 'ZA',
+      business_or_surname: person?.business_or_surname || '',
+      initials: person?.initials || '',
+      person_nature: person?.person_nature || '01',
+      nationality_code: person?.nationality_code || 'ZA',
       preferred_language: 'en', // Default
-      email_address: person.email_address || '',
+      email_address: person?.email_address || '',
       home_phone: '', // Not available in summary
       work_phone: '', // Not available in summary
       cell_phone_country_code: '+27', // Default for SA
-      cell_phone: person.cell_phone || '',
+      cell_phone: person?.cell_phone || '',
       fax_phone: '', // Not available in summary
       natural_person: person.natural_person ? {
         full_name_1: person.natural_person.full_name_1 || '',
@@ -845,9 +854,58 @@ const PersonManagementPage = () => {
     };
 
     console.log('Populating form with data:', personData);
+    console.log('PersonData object keys:', Object.keys(personData));
+    console.log('PersonData business_or_surname value:', personData.business_or_surname);
     
-    // Reset form with existing data
-    personForm.reset(personData);
+    // If no data is available, provide a minimal default structure
+    if (!person || Object.keys(person).length === 0) {
+      console.warn('No person data available, using minimal defaults');
+      const minimalData: PersonManagementForm = {
+        business_or_surname: 'UNKNOWN',
+        initials: '',
+        person_nature: '01',
+        nationality_code: 'ZA',
+        preferred_language: 'en',
+        email_address: '',
+        home_phone: '',
+        work_phone: '',
+        cell_phone_country_code: '+27',
+        cell_phone: '',
+        fax_phone: '',
+        natural_person: {
+          full_name_1: '',
+          full_name_2: '',
+          full_name_3: '',
+          birth_date: '',
+          preferred_language_code: 'en'
+        },
+        aliases: [{
+          id_document_type_code: '02',
+          id_document_number: '',
+          country_of_issue: 'ZA',
+          name_in_document: '',
+          alias_status: '1',
+          is_current: true,
+          id_document_expiry_date: ''
+        }],
+        addresses: [{
+          address_type: 'street',
+          address_line_1: '',
+          address_line_2: '',
+          address_line_3: '',
+          address_line_4: '',
+          address_line_5: '',
+          postal_code: '',
+          country_code: 'ZA',
+          province_code: '',
+          is_primary: true
+        }]
+      };
+      personForm.reset(minimalData);
+         } else {
+       // Reset form with existing data
+       personForm.reset(personData);
+     }
     
     // Use setTimeout to ensure the form is populated before moving steps
     setTimeout(() => {
