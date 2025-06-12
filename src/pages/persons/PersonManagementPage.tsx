@@ -883,7 +883,7 @@ const PersonManagementPage = () => {
                     let helperText = lookupForm.formState.errors.id_document_number?.message;
                     
                     if (isRSAID && currentValue.length === 13) {
-                      const isValid = validateRSAID(currentValue);
+                      const isValid = validateCheckDigit(currentValue);
                       validationColor = isValid ? 'success' : 'error';
                       validationIcon = isValid ? '✓' : '✗';
                       if (!helperText) {
