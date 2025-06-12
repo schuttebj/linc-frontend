@@ -1592,29 +1592,290 @@ const PersonManagementPage = () => {
     </Card>
   );
 
-  const renderReviewStep = () => (
-    <Card>
-      <CardContent>
-        <Typography variant="h6" gutterBottom>
-          Review & Submit
-        </Typography>
-        
-        <Alert severity="info" sx={{ mb: 3 }}>
-          {isNewPerson ? 'Ready to create new person record' : `Ready to update person: ${personFound?.business_or_surname}`}
-        </Alert>
+  const renderReviewStep = () => {
+    const formData = personForm.getValues();
+    const isNaturalPerson = ['01', '02'].includes(formData.person_nature);
+    
+    return (
+      <Card>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Review & Submit
+          </Typography>
+          
+          <Alert severity="info" sx={{ mb: 3 }}>
+            {isNewPerson ? 'Please review all information before creating the new person record' : `Ready to update person: ${personFound?.business_or_surname}`}
+          </Alert>
 
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Typography variant="subtitle1" gutterBottom>Summary</Typography>
-            <Typography>Person Nature: {PERSON_NATURES.find(n => n.value === watchedPersonNature)?.label}</Typography>
-            <Typography>Name: {personForm.watch('business_or_surname')}</Typography>
-            <Typography>ID Documents: {aliasFields.length}</Typography>
-            <Typography>Addresses: {addressFields.length}</Typography>
+          <Grid container spacing={3}>
+            {/* Identity Information */}
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', borderBottom: '2px solid', borderColor: 'primary.main', pb: 1 }}>
+                Identity Information
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" color="text.secondary">Person Type</Typography>
+              <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                {PERSON_NATURES.find(n => n.value === formData.person_nature)?.label || 'Not specified'}
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" color="text.secondary">
+                {isNaturalPerson ? 'Surname' : 'Business Name'}
+              </Typography>
+              <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                {formData.business_or_surname || 'Not specified'}
+              </Typography>
+            </Grid>
+
+            {isNaturalPerson && formData.initials && (
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle2" color="text.secondary">Initials</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                  {formData.initials}
+                </Typography>
+              </Grid>
+            )}
+
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" color="text.secondary">Nationality</Typography>
+              <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                {formData.nationality_code === 'ZA' ? 'South African' : 
+                 formData.nationality_code === 'US' ? 'United States' :
+                 formData.nationality_code === 'GB' ? 'United Kingdom' : 
+                 formData.nationality_code || 'Not specified'}
+              </Typography>
+            </Grid>
+
+            {/* Natural Person Details */}
+            {isNaturalPerson && formData.natural_person && (
+              <>
+                <Grid item xs={12}>
+                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', borderBottom: '2px solid', borderColor: 'primary.main', pb: 1, mt: 3 }}>
+                    Personal Details
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12} md={4}>
+                  <Typography variant="subtitle2" color="text.secondary">First Name</Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    {formData.natural_person.full_name_1 || 'Not specified'}
+                  </Typography>
+                </Grid>
+
+                {formData.natural_person.full_name_2 && (
+                  <Grid item xs={12} md={4}>
+                    <Typography variant="subtitle2" color="text.secondary">Middle Name</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {formData.natural_person.full_name_2}
+                    </Typography>
+                  </Grid>
+                )}
+
+                {formData.natural_person.birth_date && (
+                  <Grid item xs={12} md={4}>
+                    <Typography variant="subtitle2" color="text.secondary">Date of Birth</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                      {new Date(formData.natural_person.birth_date).toLocaleDateString()}
+                    </Typography>
+                  </Grid>
+                )}
+              </>
+            )}
+
+            {/* Contact Information */}
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', borderBottom: '2px solid', borderColor: 'primary.main', pb: 1, mt: 3 }}>
+                Contact Information
+              </Typography>
+            </Grid>
+
+            {formData.email_address && (
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle2" color="text.secondary">Email Address</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                  {formData.email_address}
+                </Typography>
+              </Grid>
+            )}
+
+            {formData.home_phone && (
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle2" color="text.secondary">Home Phone</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                  {formData.home_phone}
+                </Typography>
+              </Grid>
+            )}
+
+            {formData.work_phone && (
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle2" color="text.secondary">Work Phone</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                  {formData.work_phone}
+                </Typography>
+              </Grid>
+            )}
+
+            {formData.fax_phone && (
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle2" color="text.secondary">Fax Phone</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                  {formData.fax_phone}
+                </Typography>
+              </Grid>
+            )}
+
+            {(formData.cell_phone_country_code || formData.cell_phone) && (
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle2" color="text.secondary">Cell Phone</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                  {formData.cell_phone_country_code && formData.cell_phone 
+                    ? `${formData.cell_phone_country_code} ${formData.cell_phone}`
+                    : formData.cell_phone || formData.cell_phone_country_code || 'Not specified'}
+                </Typography>
+              </Grid>
+            )}
+
+            {/* ID Documents */}
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', borderBottom: '2px solid', borderColor: 'primary.main', pb: 1, mt: 3 }}>
+                ID Documents ({formData.aliases?.length || 0})
+              </Typography>
+            </Grid>
+
+            {formData.aliases?.map((alias, index) => (
+              <Grid item xs={12} key={index}>
+                <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1, backgroundColor: '#f9f9f9' }}>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={3}>
+                      <Typography variant="subtitle2" color="text.secondary">Document Type</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {ID_DOCUMENT_TYPES.find(type => type.value === alias.id_document_type_code)?.label || alias.id_document_type_code}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <Typography variant="subtitle2" color="text.secondary">Document Number</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {alias.id_document_number}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} md={2}>
+                      <Typography variant="subtitle2" color="text.secondary">Country</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {alias.country_of_issue === 'ZA' ? 'South Africa' : alias.country_of_issue}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} md={2}>
+                      <Typography variant="subtitle2" color="text.secondary">Status</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {alias.is_current ? 'Current' : 'Historical'}
+                      </Typography>
+                    </Grid>
+                    {alias.id_document_expiry_date && (
+                      <Grid item xs={12} md={1}>
+                        <Typography variant="subtitle2" color="text.secondary">Expiry Date</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {new Date(alias.id_document_expiry_date).toLocaleDateString()}
+                        </Typography>
+                      </Grid>
+                    )}
+                  </Grid>
+                </Box>
+              </Grid>
+            ))}
+
+            {/* Addresses */}
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', borderBottom: '2px solid', borderColor: 'primary.main', pb: 1, mt: 3 }}>
+                Addresses ({formData.addresses?.length || 0})
+              </Typography>
+            </Grid>
+
+            {formData.addresses?.map((address, index) => (
+              <Grid item xs={12} key={index}>
+                <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1, backgroundColor: '#f9f9f9' }}>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                        {address.address_type === 'street' ? 'Street/Physical Address' : 'Postal Address'}
+                        {address.is_primary && (
+                          <Chip label="Primary" size="small" color="primary" sx={{ ml: 1 }} />
+                        )}
+                      </Typography>
+                    </Grid>
+                    
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle2" color="text.secondary">Full Address</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {[
+                          address.address_line_1,
+                          address.address_line_2,
+                          address.address_line_3,
+                          address.address_line_4,
+                          address.address_line_5
+                        ].filter(Boolean).join(', ')}
+                      </Typography>
+                    </Grid>
+
+                    <Grid item xs={12} md={3}>
+                      <Typography variant="subtitle2" color="text.secondary">Postal Code</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {address.postal_code || 'Not specified'}
+                      </Typography>
+                    </Grid>
+
+                    {address.province_code && (
+                      <Grid item xs={12} md={3}>
+                        <Typography variant="subtitle2" color="text.secondary">Province</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {Array.isArray(provinces) ? 
+                            provinces.find(p => p.code === address.province_code)?.name || address.province_code :
+                            address.province_code
+                          }
+                        </Typography>
+                      </Grid>
+                    )}
+
+                    <Grid item xs={12} md={3}>
+                      <Typography variant="subtitle2" color="text.secondary">Country</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                        {address.country_code === 'ZA' ? 'South Africa' : 
+                         address.country_code === 'US' ? 'United States' :
+                         address.country_code === 'GB' ? 'United Kingdom' : 
+                         address.country_code}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </Box>
+              </Grid>
+            ))}
+
+            {/* Summary */}
+            <Grid item xs={12}>
+              <Alert severity="success" sx={{ mt: 3 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Ready to {isNewPerson ? 'Create' : 'Update'} Person Record
+                </Typography>
+                <Typography variant="body2">
+                  • Person Type: {PERSON_NATURES.find(n => n.value === formData.person_nature)?.label}
+                  <br />
+                  • ID Documents: {formData.aliases?.length || 0} document(s)
+                  <br />
+                  • Addresses: {formData.addresses?.length || 0} address(es)
+                  <br />
+                  • Contact Methods: {[formData.email_address, formData.home_phone, formData.work_phone, formData.cell_phone, formData.fax_phone].filter(Boolean).length} method(s)
+                </Typography>
+              </Alert>
+            </Grid>
           </Grid>
-        </Grid>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', p: 3 }}>
