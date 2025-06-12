@@ -139,17 +139,17 @@ const ID_DOCUMENT_TYPES = [
 ];
 
 const PERSON_NATURES = [
-  { value: '01', label: 'Male (Natural Person)' },
-  { value: '02', label: 'Female (Natural Person)' },
-  { value: '03', label: 'Company/Corporation' },
-  { value: '10', label: 'Close Corporation' },
-  { value: '11', label: 'Trust' },
-  { value: '12', label: 'Partnership' },
-  { value: '13', label: 'Sole Proprietorship' },
-  { value: '14', label: 'Association' },
-  { value: '15', label: 'Cooperative' },
-  { value: '16', label: 'Non-Profit Organization' },
-  { value: '17', label: 'Other Organization' }
+  { value: '01', label: 'Male (Natural Person)', disabled: false },
+  { value: '02', label: 'Female (Natural Person)', disabled: false },
+  { value: '03', label: 'Company/Corporation', disabled: true },
+  { value: '10', label: 'Close Corporation', disabled: true },
+  { value: '11', label: 'Trust', disabled: true },
+  { value: '12', label: 'Partnership', disabled: true },
+  { value: '13', label: 'Sole Proprietorship', disabled: true },
+  { value: '14', label: 'Association', disabled: true },
+  { value: '15', label: 'Cooperative', disabled: true },
+  { value: '16', label: 'Non-Profit Organization', disabled: true },
+  { value: '17', label: 'Other Organization', disabled: true }
 ];
 
 // RSA ID validation function
@@ -915,8 +915,13 @@ const PersonManagementPage = () => {
                   <InputLabel>Person Nature *</InputLabel>
                   <Select {...field} label="Person Nature *">
                     {PERSON_NATURES.map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
+                      <MenuItem key={option.value} value={option.value} disabled={option.disabled}>
                         {option.label}
+                        {option.disabled && (
+                          <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                            (Coming Soon)
+                          </Typography>
+                        )}
                       </MenuItem>
                     ))}
                   </Select>
