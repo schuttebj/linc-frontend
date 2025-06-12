@@ -132,17 +132,12 @@ interface ExistingPerson {
 }
 
 // Lookup data
-// Extended ID document types including civil registration documents
+// Core ID document types as specified
 const ID_DOCUMENT_TYPES = [
   { value: '01', label: 'TRN (Traffic Register Number)', format: 'numeric', length: 13, requiresExpiry: false },
   { value: '02', label: 'RSA ID (South African ID Document)', format: 'numeric', length: 13, requiresExpiry: false },
   { value: '03', label: 'Foreign ID (Foreign ID Document)', format: 'alphanumeric', length: 'variable', requiresExpiry: true },
-  { value: '04', label: 'BRN (Business Registration Number)', format: 'numeric', length: 13, requiresExpiry: false },
-  { value: '05', label: 'Passport Number', format: 'alphanumeric', length: 'variable', requiresExpiry: true },
-  { value: '06', label: 'Birth Certificate', format: 'alphanumeric', length: 'variable', requiresExpiry: false },
-  { value: '07', label: 'Marriage Certificate', format: 'alphanumeric', length: 'variable', requiresExpiry: false },
-  { value: '08', label: 'Death Certificate', format: 'alphanumeric', length: 'variable', requiresExpiry: false },
-  { value: '13', label: 'Passport (Legacy)', format: 'alphanumeric', length: 'variable', requiresExpiry: true }
+  { value: '05', label: 'Passport Number', format: 'alphanumeric', length: 'variable', requiresExpiry: true }
 ];
 
 const PERSON_NATURES = [
@@ -187,25 +182,15 @@ const validatePassport = (passportNumber: string): boolean => {
   return cleaned.length >= 6 && cleaned.length <= 12 && /^[A-Za-z0-9]+$/.test(cleaned);
 };
 
-const validateCertificate = (certNumber: string): boolean => {
-  if (!certNumber) return false;
-  const cleaned = certNumber.replace(/[\s\-\/]/g, '');
-  return cleaned.length >= 8 && cleaned.length <= 20 && /^[A-Za-z0-9]+$/.test(cleaned);
-};
+
 
 const validateDocumentNumber = (docType: string, docNumber: string): boolean => {
   switch (docType) {
     case '01': // TRN
     case '02': // RSA ID
-    case '04': // BRN
       return validateCheckDigit(docNumber);
     case '05': // Passport
-    case '13': // Passport Legacy
       return validatePassport(docNumber);
-    case '06': // Birth Certificate
-    case '07': // Marriage Certificate
-    case '08': // Death Certificate
-      return validateCertificate(docNumber);
     case '03': // Foreign ID
       return docNumber.length >= 4;
     default:
@@ -292,7 +277,7 @@ const personSchema = yup.object({
     yup.object({
       id_document_type_code: yup.string()
         .required('Alias identification type is mandatory (V00012)')
-        .oneOf(['01', '02', '03', '04', '05', '06', '07', '08', '13'], 'Invalid ID document type'),
+        .oneOf(['01', '02', '03', '05'], 'Invalid ID document type'),
       id_document_number: yup.string()
         .required('Alias identification number is mandatory (V00013)')
         .test('document-format-validation', 'Invalid document number format', function(value) {
@@ -315,17 +300,12 @@ const personSchema = yup.object({
             if (!validateCheckDigit(value)) {
               return this.createError({message: `Invalid ${docType.label} check digit (V00019)`});
             }
-          } else if (id_document_type_code === '05' || id_document_type_code === '13') {
-            // Passport validation
-            if (!validatePassport(value)) {
-              return this.createError({message: 'Passport number must be 6-12 alphanumeric characters'});
-            }
-          } else if (['06', '07', '08'].includes(id_document_type_code)) {
-            // Certificate validation
-            if (!validateCertificate(value)) {
-              return this.createError({message: 'Certificate number must be 8-20 alphanumeric characters'});
-            }
-          } else if (id_document_type_code === '03') {
+                     } else if (id_document_type_code === '05') {
+             // Passport validation
+             if (!validatePassport(value)) {
+               return this.createError({message: 'Passport number must be 6-12 alphanumeric characters'});
+             }
+           } else if (id_document_type_code === '03') {
             // Foreign ID validation
             if (value.length < 4) {
               return this.createError({message: 'Foreign ID must be at least 4 characters'});
@@ -349,12 +329,7 @@ const personSchema = yup.object({
             return this.createError({message: `Expiry date is required for ${docType.label}`});
           }
           
-          // Birth, Marriage, Death certificates should not have expiry dates
-          if (['06', '07', '08'].includes(id_document_type_code) && value) {
-            const certType = id_document_type_code === '06' ? 'Birth' : 
-                           id_document_type_code === '07' ? 'Marriage' : 'Death';
-            return this.createError({message: `${certType} certificates do not have expiry dates`});
-          }
+          
           
           return true;
         })

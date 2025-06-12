@@ -134,12 +134,7 @@ const ID_DOCUMENT_TYPES = [
   { value: '01', label: 'TRN', fullLabel: 'Traffic Register Number' },
   { value: '02', label: 'RSA ID', fullLabel: 'South African ID Document' },
   { value: '03', label: 'Foreign ID', fullLabel: 'Foreign ID Document' },
-  { value: '04', label: 'BRN', fullLabel: 'Business Registration Number' },
-  { value: '05', label: 'Passport', fullLabel: 'Passport Number' },
-  { value: '06', label: 'Birth Cert', fullLabel: 'Birth Certificate' },
-  { value: '07', label: 'Marriage Cert', fullLabel: 'Marriage Certificate' },
-  { value: '08', label: 'Death Cert', fullLabel: 'Death Certificate' },
-  { value: '13', label: 'Passport (Legacy)', fullLabel: 'Passport Legacy' }
+  { value: '05', label: 'Passport', fullLabel: 'Passport Number' }
 ];
 
 const NATIONALITIES = [
