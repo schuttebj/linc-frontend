@@ -777,16 +777,46 @@ const PersonManagementPage = () => {
     alert(`Viewing details for: ${person.business_or_surname}\nFeature coming soon!`);
   };
 
-  const handleEditPerson = (person: ExistingPerson) => {
+  const handleEditPerson = async (person: ExistingPerson) => {
     console.log('Starting edit for person:', person);
     console.log('Person object keys:', Object.keys(person));
+    
+    // Set edit mode
+    setIsEditMode(true);
+    
+    // The existence check only returns summary data
+    // We need to fetch the complete person record for editing
+    try {
+      console.log('Fetching complete person record...');
+      const response = await fetch(`${API_BASE_URL}/api/v1/persons/${person.id || 'search'}?id_type=${person.id_type}&id_number=${person.id_number}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+      
+      if (response.ok) {
+        const fullPersonData = await response.json();
+        console.log('Full person data received:', fullPersonData);
+        console.log('Full person data keys:', Object.keys(fullPersonData || {}));
+        
+        // Use the full person data instead of the summary
+        populateEditForm(fullPersonData);
+      } else {
+        console.warn('Could not fetch full person data, using summary data');
+        populateEditForm(person);
+      }
+    } catch (error) {
+      console.error('Error fetching full person data:', error);
+      populateEditForm(person);
+    }
+  };
+
+  const populateEditForm = (person: ExistingPerson) => {
+    console.log('Populating form with person data:', person);
     console.log('Person business_or_surname:', person.business_or_surname);
     console.log('Person natural_person:', person.natural_person);
     console.log('Person aliases:', person.aliases);
     console.log('Person addresses:', person.addresses);
-    
-    // Set edit mode
-    setIsEditMode(true);
     
     // Pre-populate form with existing person data for editing
     // Note: API returns different field names than our interface expects
@@ -911,14 +941,14 @@ const PersonManagementPage = () => {
        personForm.reset(personData);
      }
     
-    // Use setTimeout to ensure the form is populated before moving steps
-    setTimeout(() => {
-      // Skip to step 2 (Basic Information) since we're editing
-      setCurrentStep(2);
-      setPersonFound(null); // Hide the found person display
-      console.log('Form populated and moved to step 2');
-    }, 100);
-  };
+         // Use setTimeout to ensure the form is populated before moving steps
+     setTimeout(() => {
+       // Skip to step 2 (Basic Information) since we're editing
+       setCurrentStep(2);
+       setPersonFound(null); // Hide the found person display
+       console.log('Form populated and moved to step 2');
+     }, 100);
+   };
 
   // Render step content
   const renderStepContent = () => {
