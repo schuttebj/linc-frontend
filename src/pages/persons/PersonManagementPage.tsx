@@ -132,10 +132,17 @@ interface ExistingPerson {
 }
 
 // Lookup data
-// V00012 - Only RSA ID and Foreign ID allowed for person introduction
+// Extended ID document types including civil registration documents
 const ID_DOCUMENT_TYPES = [
-  { value: '02', label: 'RSA ID (South African ID Document)' },
-  { value: '03', label: 'Foreign ID (Foreign ID Document)' }
+  { value: '01', label: 'TRN (Traffic Register Number)', format: 'numeric', length: 13, requiresExpiry: false },
+  { value: '02', label: 'RSA ID (South African ID Document)', format: 'numeric', length: 13, requiresExpiry: false },
+  { value: '03', label: 'Foreign ID (Foreign ID Document)', format: 'alphanumeric', length: 'variable', requiresExpiry: true },
+  { value: '04', label: 'BRN (Business Registration Number)', format: 'numeric', length: 13, requiresExpiry: false },
+  { value: '05', label: 'Passport Number', format: 'alphanumeric', length: 'variable', requiresExpiry: true },
+  { value: '06', label: 'Birth Certificate', format: 'alphanumeric', length: 'variable', requiresExpiry: false },
+  { value: '07', label: 'Marriage Certificate', format: 'alphanumeric', length: 'variable', requiresExpiry: false },
+  { value: '08', label: 'Death Certificate', format: 'alphanumeric', length: 'variable', requiresExpiry: false },
+  { value: '13', label: 'Passport (Legacy)', format: 'alphanumeric', length: 'variable', requiresExpiry: true }
 ];
 
 const PERSON_NATURES = [
@@ -152,12 +159,12 @@ const PERSON_NATURES = [
   { value: '17', label: 'Other Organization', disabled: true }
 ];
 
-// RSA ID validation function
-const validateRSAID = (idNumber: string): boolean => {
+// Document validation functions
+const validateCheckDigit = (idNumber: string): boolean => {
   if (!idNumber || idNumber.length !== 13) return false;
   if (!/^\d{13}$/.test(idNumber)) return false;
   
-  // Calculate checksum using Luhn algorithm
+  // Calculate checksum using Luhn algorithm for RSA ID, TRN, BRN
   const digits = idNumber.split('').map(Number);
   let sum = 0;
   
@@ -174,15 +181,47 @@ const validateRSAID = (idNumber: string): boolean => {
   return checkDigit === digits[12];
 };
 
+const validatePassport = (passportNumber: string): boolean => {
+  if (!passportNumber) return false;
+  const cleaned = passportNumber.replace(/\s/g, '');
+  return cleaned.length >= 6 && cleaned.length <= 12 && /^[A-Za-z0-9]+$/.test(cleaned);
+};
+
+const validateCertificate = (certNumber: string): boolean => {
+  if (!certNumber) return false;
+  const cleaned = certNumber.replace(/[\s\-\/]/g, '');
+  return cleaned.length >= 8 && cleaned.length <= 20 && /^[A-Za-z0-9]+$/.test(cleaned);
+};
+
+const validateDocumentNumber = (docType: string, docNumber: string): boolean => {
+  switch (docType) {
+    case '01': // TRN
+    case '02': // RSA ID
+    case '04': // BRN
+      return validateCheckDigit(docNumber);
+    case '05': // Passport
+    case '13': // Passport Legacy
+      return validatePassport(docNumber);
+    case '06': // Birth Certificate
+    case '07': // Marriage Certificate
+    case '08': // Death Certificate
+      return validateCertificate(docNumber);
+    case '03': // Foreign ID
+      return docNumber.length >= 4;
+    default:
+      return true;
+  }
+};
+
 // Validation schemas
 const lookupSchema = yup.object({
   id_document_type_code: yup.string().required('ID document type is required'),
   id_document_number: yup.string().required('ID document number is required')
     .min(3, 'ID number must be at least 3 characters')
-    .test('rsa-id-validation', 'Invalid RSA ID number - check digit validation failed (V00019)', function(value) {
+    .test('document-validation', 'Invalid document number format', function(value) {
       const { id_document_type_code } = this.parent;
-      if (id_document_type_code === '02' && value) {
-        return validateRSAID(value);
+      if (value && id_document_type_code) {
+        return validateDocumentNumber(id_document_type_code, value);
       }
       return true;
     })
@@ -248,33 +287,51 @@ const personSchema = yup.object({
   fax_phone: yup.string()
     .max(20, 'Maximum 20 characters'),
   
-  // V00012 - Only RSA ID (02) and Foreign ID (03) allowed
+  // Extended ID document validation for all types
   aliases: yup.array().of(
     yup.object({
       id_document_type_code: yup.string()
         .required('Alias identification type is mandatory (V00012)')
-        .oneOf(['02', '03'], 'Only RSA ID and Foreign ID allowed for person introduction (V00012)'),
+        .oneOf(['01', '02', '03', '04', '05', '06', '07', '08', '13'], 'Invalid ID document type'),
       id_document_number: yup.string()
         .required('Alias identification number is mandatory (V00013)')
-        .test('length-validation', 'RSA ID must be exactly 13 characters (V00018)', function(value) {
+        .test('document-format-validation', 'Invalid document number format', function(value) {
           const { id_document_type_code } = this.parent;
-          if (id_document_type_code === '02') {
-            return value?.length === 13;
+          if (!value || !id_document_type_code) return false;
+          
+          // Get document type info
+          const docType = ID_DOCUMENT_TYPES.find(dt => dt.value === id_document_type_code);
+          if (!docType) return false;
+          
+          // Validate based on document type
+          if (docType.format === 'numeric' && docType.length === 13) {
+            // TRN, RSA ID, BRN validation
+            if (value.length !== 13) {
+              return this.createError({message: `${docType.label} must be exactly 13 characters (V00018)`});
+            }
+            if (!/^\d+$/.test(value)) {
+              return this.createError({message: `${docType.label} must be numeric only (V00017)`});
+            }
+            if (!validateCheckDigit(value)) {
+              return this.createError({message: `Invalid ${docType.label} check digit (V00019)`});
+            }
+          } else if (id_document_type_code === '05' || id_document_type_code === '13') {
+            // Passport validation
+            if (!validatePassport(value)) {
+              return this.createError({message: 'Passport number must be 6-12 alphanumeric characters'});
+            }
+          } else if (['06', '07', '08'].includes(id_document_type_code)) {
+            // Certificate validation
+            if (!validateCertificate(value)) {
+              return this.createError({message: 'Certificate number must be 8-20 alphanumeric characters'});
+            }
+          } else if (id_document_type_code === '03') {
+            // Foreign ID validation
+            if (value.length < 4) {
+              return this.createError({message: 'Foreign ID must be at least 4 characters'});
+            }
           }
-          return true;
-        })
-        .test('numeric-validation', 'RSA ID must be numeric only (V00017)', function(value) {
-          const { id_document_type_code } = this.parent;
-          if (id_document_type_code === '02') {
-            return /^\d+$/.test(value || '');
-          }
-          return true;
-        })
-        .test('rsa-id-checksum', 'Invalid RSA ID number - check digit validation failed (V00019)', function(value) {
-          const { id_document_type_code } = this.parent;
-          if (id_document_type_code === '02' && value) {
-            return validateRSAID(value);
-          }
+          
           return true;
         }),
       country_of_issue: yup.string().required(),
@@ -284,10 +341,22 @@ const personSchema = yup.object({
           if (!value) return true;
           return new Date(value) > new Date();
         })
-        .when('id_document_type_code', {
-          is: '03', // Foreign ID
-          then: () => yup.string().required('Expiry date is required for foreign documents'),
-          otherwise: () => yup.string()
+        .test('expiry-required', 'Expiry date validation', function(value) {
+          const { id_document_type_code } = this.parent;
+          const docType = ID_DOCUMENT_TYPES.find(dt => dt.value === id_document_type_code);
+          
+          if (docType?.requiresExpiry && !value) {
+            return this.createError({message: `Expiry date is required for ${docType.label}`});
+          }
+          
+          // Birth, Marriage, Death certificates should not have expiry dates
+          if (['06', '07', '08'].includes(id_document_type_code) && value) {
+            const certType = id_document_type_code === '06' ? 'Birth' : 
+                           id_document_type_code === '07' ? 'Marriage' : 'Death';
+            return this.createError({message: `${certType} certificates do not have expiry dates`});
+          }
+          
+          return true;
         })
     })
   ).min(1, 'At least one identification document is required'),
