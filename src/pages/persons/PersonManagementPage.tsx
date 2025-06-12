@@ -374,7 +374,6 @@ const PersonManagementPage = () => {
   const [personFound, setPersonFound] = useState<ExistingPerson | null>(null);
   const [isNewPerson, setIsNewPerson] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [editingPersonId, setEditingPersonId] = useState<string | null>(null);
   const [lookupLoading, setLookupLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [stepValidation, setStepValidation] = useState<boolean[]>(new Array(steps.length).fill(false));
@@ -759,7 +758,6 @@ const PersonManagementPage = () => {
     setPersonFound(null);
     setIsNewPerson(false);
     setIsEditMode(false);
-    setEditingPersonId(null);
     setStepValidation(new Array(steps.length).fill(false));
     lookupForm.reset();
     personForm.reset();
@@ -777,7 +775,6 @@ const PersonManagementPage = () => {
     
     // Set edit mode
     setIsEditMode(true);
-    setEditingPersonId(person.id);
     
     // Pre-populate form with existing person data for editing
     const personData: PersonManagementForm = {
