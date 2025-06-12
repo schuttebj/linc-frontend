@@ -373,6 +373,8 @@ const PersonManagementPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [personFound, setPersonFound] = useState<ExistingPerson | null>(null);
   const [isNewPerson, setIsNewPerson] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingPersonId, setEditingPersonId] = useState<string | null>(null);
   const [lookupLoading, setLookupLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [stepValidation, setStepValidation] = useState<boolean[]>(new Array(steps.length).fill(false));
@@ -756,6 +758,8 @@ const PersonManagementPage = () => {
     setCurrentStep(0);
     setPersonFound(null);
     setIsNewPerson(false);
+    setIsEditMode(false);
+    setEditingPersonId(null);
     setStepValidation(new Array(steps.length).fill(false));
     lookupForm.reset();
     personForm.reset();
@@ -769,48 +773,92 @@ const PersonManagementPage = () => {
   };
 
   const handleEditPerson = (person: ExistingPerson) => {
+    console.log('Starting edit for person:', person);
+    
+    // Set edit mode
+    setIsEditMode(true);
+    setEditingPersonId(person.id);
+    
     // Pre-populate form with existing person data for editing
     const personData: PersonManagementForm = {
-      business_or_surname: person.business_or_surname,
+      business_or_surname: person.business_or_surname || '',
       initials: person.initials || '',
-      person_nature: person.person_nature,
+      person_nature: person.person_nature || '',
       nationality_code: person.nationality_code || 'ZA',
+      preferred_language: 'en', // Default
       email_address: person.email_address || '',
+      home_phone: '', // Not available in summary
+      work_phone: '', // Not available in summary
+      cell_phone_country_code: '+27', // Default for SA
       cell_phone: person.cell_phone || '',
+      fax_phone: '', // Not available in summary
       natural_person: person.natural_person ? {
         full_name_1: person.natural_person.full_name_1 || '',
         full_name_2: person.natural_person.full_name_2 || '',
+        full_name_3: '', // Not in summary
+        birth_date: person.natural_person.birth_date || '',
+        preferred_language_code: 'en' // Default
+      } : {
+        full_name_1: '',
+        full_name_2: '',
         full_name_3: '',
-        birth_date: person.natural_person.birth_date || ''
-      } : undefined,
+        birth_date: '',
+        preferred_language_code: 'en'
+      },
       aliases: person.aliases?.map(alias => ({
-        id_document_type_code: alias.id_document_type_code,
-        id_document_number: alias.id_document_number,
+        id_document_type_code: alias.id_document_type_code || '02',
+        id_document_number: alias.id_document_number || '',
         country_of_issue: 'ZA', // Default, would need to fetch from backend
+        name_in_document: '', // Not in summary
+        alias_status: '1', // Default active
+        is_current: alias.is_current !== undefined ? alias.is_current : true,
+        id_document_expiry_date: '' // Not in summary
+      })) || [{
+        id_document_type_code: '02',
+        id_document_number: '',
+        country_of_issue: 'ZA',
+        name_in_document: '',
         alias_status: '1',
-        is_current: alias.is_current,
+        is_current: true,
         id_document_expiry_date: ''
-      })) || [],
+      }],
       addresses: person.addresses?.map(address => ({
-        address_type: address.address_type,
-        address_line_1: address.address_line_1,
+        address_type: address.address_type || 'street',
+        address_line_1: address.address_line_1 || '',
+        address_line_2: '', // Not in summary
+        address_line_3: '', // Not in summary
+        address_line_4: address.address_line_4 || '',
+        address_line_5: '', // Not in summary
+        postal_code: address.postal_code || '',
+        country_code: 'ZA', // Default
+        province_code: '', // Not in summary
+        is_primary: address.is_primary !== undefined ? address.is_primary : true
+      })) || [{
+        address_type: 'street',
+        address_line_1: '',
         address_line_2: '',
         address_line_3: '',
-        address_line_4: address.address_line_4 || '',
+        address_line_4: '',
         address_line_5: '',
-        postal_code: address.postal_code || '',
+        postal_code: '',
         country_code: 'ZA',
         province_code: '',
-        is_primary: address.is_primary
-      })) || []
+        is_primary: true
+      }]
     };
 
+    console.log('Populating form with data:', personData);
+    
     // Reset form with existing data
     personForm.reset(personData);
     
-    // Skip to step 2 (Basic Information) since we're editing
-    setCurrentStep(2);
-    setPersonFound(null); // Hide the found person display
+    // Use setTimeout to ensure the form is populated before moving steps
+    setTimeout(() => {
+      // Skip to step 2 (Basic Information) since we're editing
+      setCurrentStep(2);
+      setPersonFound(null); // Hide the found person display
+      console.log('Form populated and moved to step 2');
+    }, 100);
   };
 
   // Render step content
@@ -1025,9 +1073,15 @@ const PersonManagementPage = () => {
           Person Nature Selection
         </Typography>
         
-        <Alert severity="info" sx={{ mb: 3 }}>
-          This person was not found in the system. Please select the type of person/entity to register.
-        </Alert>
+        {!isEditMode ? (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            This person was not found in the system. Please select the type of person/entity to register.
+          </Alert>
+        ) : (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            <strong>Edit Mode:</strong> Person nature cannot be changed for existing persons.
+          </Alert>
+        )}
         
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
@@ -1037,7 +1091,7 @@ const PersonManagementPage = () => {
               render={({ field }) => (
                 <FormControl fullWidth error={!!personForm.formState.errors.person_nature}>
                   <InputLabel>Person Nature *</InputLabel>
-                  <Select {...field} label="Person Nature *">
+                  <Select {...field} label="Person Nature *" disabled={isEditMode}>
                     {PERSON_NATURES.map((option) => (
                       <MenuItem key={option.value} value={option.value} disabled={option.disabled}>
                         {option.label}
@@ -1050,7 +1104,8 @@ const PersonManagementPage = () => {
                     ))}
                   </Select>
                   <FormHelperText>
-                    {personForm.formState.errors.person_nature?.message || 'Select the type of person/entity (V00034)'}
+                    {isEditMode ? 'Person nature cannot be changed' : 
+                     personForm.formState.errors.person_nature?.message || 'Select the type of person/entity (V00034)'}
                   </FormHelperText>
                 </FormControl>
               )}
@@ -1078,8 +1133,15 @@ const PersonManagementPage = () => {
     <Card>
       <CardContent>
         <Typography variant="h6" gutterBottom>
-          Basic Information
+          {isEditMode ? 'Edit Person Information' : 'Basic Information'}
         </Typography>
+        
+        {isEditMode && (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            <strong>Edit Mode:</strong> You are editing an existing person record. 
+            Some fields like person nature cannot be changed.
+          </Alert>
+        )}
         
         <Grid container spacing={3}>
           {/* Identity Section */}
@@ -1356,6 +1418,13 @@ const PersonManagementPage = () => {
           ID Documents / Aliases
         </Typography>
         
+        {isEditMode && (
+          <Alert severity="warning" sx={{ mb: 3 }}>
+            <strong>Edit Mode:</strong> Primary ID document cannot be changed as it's used for identification.
+            You can add additional ID documents if needed.
+          </Alert>
+        )}
+        
         {aliasFields.map((field, index) => (
           <Box key={field.id} sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
             <Grid container spacing={2}>
@@ -1366,13 +1435,16 @@ const PersonManagementPage = () => {
                   render={({ field }) => (
                     <FormControl fullWidth>
                       <InputLabel>ID Type</InputLabel>
-                      <Select {...field} label="ID Type" disabled={index === 0}>
+                      <Select {...field} label="ID Type" disabled={index === 0 || (isEditMode && index === 0)}>
                         {ID_DOCUMENT_TYPES.map((option) => (
                           <MenuItem key={option.value} value={option.value}>
                             {option.label}
                           </MenuItem>
                         ))}
                       </Select>
+                      {index === 0 && isEditMode && (
+                        <FormHelperText>Primary ID - Cannot be changed</FormHelperText>
+                      )}
                     </FormControl>
                   )}
                 />
@@ -1387,8 +1459,11 @@ const PersonManagementPage = () => {
                       {...field}
                       fullWidth
                       label="ID Number"
-                      disabled={index === 0}
-                      helperText={index === 0 ? 'From lookup step' : 'Additional ID document'}
+                      disabled={index === 0 || (isEditMode && index === 0)}
+                      helperText={
+                        index === 0 && isEditMode ? 'Primary ID - Cannot be changed' :
+                        index === 0 ? 'From lookup step' : 'Additional ID document'
+                      }
                     />
                   )}
                 />
