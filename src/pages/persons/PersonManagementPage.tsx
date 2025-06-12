@@ -33,7 +33,8 @@ import {
   Search as SearchIcon,
   PersonAdd as PersonAddIcon,
   Edit as EditIcon,
-  Clear as ClearIcon
+  Clear as ClearIcon,
+  Visibility as VisibilityIcon
 } from '@mui/icons-material';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -760,6 +761,58 @@ const PersonManagementPage = () => {
     personForm.reset();
   };
 
+  // Handler functions for edit/review functionality
+  const handleViewPerson = (person: ExistingPerson) => {
+    // TODO: Open a dialog or navigate to a view page showing full person details
+    console.log('Viewing person:', person);
+    alert(`Viewing details for: ${person.business_or_surname}\nFeature coming soon!`);
+  };
+
+  const handleEditPerson = (person: ExistingPerson) => {
+    // Pre-populate form with existing person data for editing
+    const personData: PersonManagementForm = {
+      business_or_surname: person.business_or_surname,
+      initials: person.initials || '',
+      person_nature: person.person_nature,
+      nationality_code: person.nationality_code || 'ZA',
+      email_address: person.email_address || '',
+      cell_phone: person.cell_phone || '',
+      natural_person: person.natural_person ? {
+        full_name_1: person.natural_person.full_name_1 || '',
+        full_name_2: person.natural_person.full_name_2 || '',
+        full_name_3: '',
+        birth_date: person.natural_person.birth_date || ''
+      } : undefined,
+      aliases: person.aliases?.map(alias => ({
+        id_document_type_code: alias.id_document_type_code,
+        id_document_number: alias.id_document_number,
+        country_of_issue: 'ZA', // Default, would need to fetch from backend
+        alias_status: '1',
+        is_current: alias.is_current,
+        id_document_expiry_date: ''
+      })) || [],
+      addresses: person.addresses?.map(address => ({
+        address_type: address.address_type,
+        address_line_1: address.address_line_1,
+        address_line_2: '',
+        address_line_3: '',
+        address_line_4: address.address_line_4 || '',
+        address_line_5: '',
+        postal_code: address.postal_code || '',
+        country_code: 'ZA',
+        province_code: '',
+        is_primary: address.is_primary
+      })) || []
+    };
+
+    // Reset form with existing data
+    personForm.reset(personData);
+    
+    // Skip to step 2 (Basic Information) since we're editing
+    setCurrentStep(2);
+    setPersonFound(null); // Hide the found person display
+  };
+
   // Render step content
   const renderStepContent = () => {
     switch (currentStep) {
@@ -811,6 +864,33 @@ const PersonManagementPage = () => {
                   size="small" 
                   color={personFound.is_active ? 'success' : 'error'} 
                 />
+              </Grid>
+              
+              {/* Edit/Review Actions */}
+              <Grid item xs={12}>
+                <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                  <Button 
+                    variant="outlined" 
+                    startIcon={<VisibilityIcon />}
+                    onClick={() => handleViewPerson(personFound)}
+                  >
+                    Review Details
+                  </Button>
+                  <Button 
+                    variant="contained" 
+                    startIcon={<EditIcon />}
+                    onClick={() => handleEditPerson(personFound)}
+                  >
+                    Edit Person
+                  </Button>
+                  <Button 
+                    variant="outlined" 
+                    color="secondary"
+                    onClick={() => setPersonFound(null)}
+                  >
+                    Search Another
+                  </Button>
+                </Box>
               </Grid>
             </Grid>
           </Box>
