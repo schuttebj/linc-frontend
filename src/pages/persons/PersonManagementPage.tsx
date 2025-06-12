@@ -102,15 +102,18 @@ interface PersonManagementForm {
 }
 
 interface ExistingPerson {
-  id: string;
-  business_or_surname: string;
+  id?: string;
+  business_or_surname?: string;
+  name?: string; // API returns this field instead of business_or_surname
   initials?: string;
   person_nature: string;
-  nationality_code: string;
+  nationality_code?: string;
   email_address?: string;
   cell_phone?: string;
   is_active: boolean;
-  created_at: string;
+  created_at?: string;
+  id_type?: string; // API returns this for document type
+  id_number?: string; // API returns this for document number
   natural_person?: {
     full_name_1?: string;
     full_name_2?: string;
@@ -786,8 +789,9 @@ const PersonManagementPage = () => {
     setIsEditMode(true);
     
     // Pre-populate form with existing person data for editing
+    // Note: API returns different field names than our interface expects
     const personData: PersonManagementForm = {
-      business_or_surname: person?.business_or_surname || '',
+      business_or_surname: person?.name || person?.business_or_surname || '',
       initials: person?.initials || '',
       person_nature: person?.person_nature || '01',
       nationality_code: person?.nationality_code || 'ZA',
@@ -820,8 +824,8 @@ const PersonManagementPage = () => {
         is_current: alias.is_current !== undefined ? alias.is_current : true,
         id_document_expiry_date: '' // Not in summary
       })) || [{
-        id_document_type_code: '02',
-        id_document_number: '',
+        id_document_type_code: person?.id_type || '02',
+        id_document_number: person?.id_number || '',
         country_of_issue: 'ZA',
         name_in_document: '',
         alias_status: '1',
@@ -954,7 +958,7 @@ const PersonManagementPage = () => {
             <Grid container spacing={2}>
               <Grid item xs={12}>
                 <Typography variant="subtitle1">
-                  <strong>Existing Person:</strong> {personFound.business_or_surname}
+                  <strong>Existing Person:</strong> {personFound.name || personFound.business_or_surname}
                   {personFound.natural_person?.full_name_1 && 
                     ` - ${personFound.natural_person.full_name_1}`
                   }
