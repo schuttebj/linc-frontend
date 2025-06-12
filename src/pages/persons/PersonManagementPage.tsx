@@ -953,7 +953,13 @@ const PersonManagementPage = () => {
         </Typography>
         
         <Grid container spacing={3}>
-          {/* Business/Surname */}
+          {/* Identity Section */}
+          <Grid item xs={12}>
+            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
+              Identity Information
+            </Typography>
+          </Grid>
+
           <Grid item xs={12} md={6}>
             <Controller
               name="business_or_surname"
@@ -972,9 +978,8 @@ const PersonManagementPage = () => {
             />
           </Grid>
 
-          {/* Initials - MANDATORY for natural persons per V00051 */}
-          {['01', '02'].includes(watchedPersonNature) && (
-            <Grid item xs={12} md={6}>
+          {['01', '02'].includes(watchedPersonNature) ? (
+            <Grid item xs={12} md={3}>
               <Controller
                 name="initials"
                 control={personForm.control}
@@ -985,16 +990,17 @@ const PersonManagementPage = () => {
                     fullWidth
                     label="Initials *"
                     error={!!personForm.formState.errors.initials}
-                    helperText={personForm.formState.errors.initials?.message || 'Initials are mandatory for natural persons (V00051) - Auto-converted to UPPERCASE'}
+                    helperText={personForm.formState.errors.initials?.message || 'Required for natural persons (V00051)'}
                     inputProps={{ maxLength: 3, style: { textTransform: 'uppercase' } }}
                   />
                 )}
               />
             </Grid>
+          ) : (
+            <Grid item xs={12} md={3} />
           )}
 
-          {/* Nationality */}
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={3}>
             <Controller
               name="nationality_code"
               control={personForm.control}
@@ -1011,11 +1017,11 @@ const PersonManagementPage = () => {
             />
           </Grid>
 
-          {/* Natural Person Fields */}
+          {/* Natural Person Details */}
           {['01', '02'].includes(watchedPersonNature) && (
             <>
               <Grid item xs={12}>
-                <Typography variant="subtitle1" gutterBottom>
+                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', mt: 2 }}>
                   Personal Details
                 </Typography>
               </Grid>
@@ -1031,7 +1037,7 @@ const PersonManagementPage = () => {
                       fullWidth
                       label="First Name *"
                       error={!!personForm.formState.errors.natural_person?.full_name_1}
-                      helperText={personForm.formState.errors.natural_person?.full_name_1?.message || 'First/given name (V00056) - Auto-converted to UPPERCASE'}
+                      helperText={personForm.formState.errors.natural_person?.full_name_1?.message || 'First/given name (V00056)'}
                       inputProps={{ maxLength: 32, style: { textTransform: 'uppercase' } }}
                     />
                   )}
@@ -1048,7 +1054,7 @@ const PersonManagementPage = () => {
                       onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                       fullWidth
                       label="Middle Name"
-                      helperText="Middle name (optional) - Auto-converted to UPPERCASE"
+                      helperText="Middle name (optional)"
                       inputProps={{ maxLength: 32, style: { textTransform: 'uppercase' } }}
                     />
                   )}
@@ -1066,7 +1072,7 @@ const PersonManagementPage = () => {
                       type="date"
                       label="Date of Birth"
                       InputLabelProps={{ shrink: true }}
-                      helperText="Date of birth (auto-derived from RSA ID)"
+                      helperText="Auto-derived from RSA ID"
                     />
                   )}
                 />
@@ -1076,7 +1082,7 @@ const PersonManagementPage = () => {
 
           {/* Contact Information */}
           <Grid item xs={12}>
-            <Typography variant="subtitle1" gutterBottom>
+            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', mt: 2 }}>
               Contact Information
             </Typography>
           </Grid>
@@ -1109,7 +1115,7 @@ const PersonManagementPage = () => {
                   fullWidth
                   label="Home Phone"
                   error={!!personForm.formState.errors.home_phone}
-                  helperText={personForm.formState.errors.home_phone?.message || "Home phone number (optional, max 20 chars)"}
+                  helperText={personForm.formState.errors.home_phone?.message || "Home phone number (optional)"}
                   inputProps={{ maxLength: 20 }}
                 />
               )}
@@ -1126,7 +1132,7 @@ const PersonManagementPage = () => {
                   fullWidth
                   label="Work Phone"
                   error={!!personForm.formState.errors.work_phone}
-                  helperText={personForm.formState.errors.work_phone?.message || "Work phone number (optional, max 20 chars)"}
+                  helperText={personForm.formState.errors.work_phone?.message || "Work phone number (optional)"}
                   inputProps={{ maxLength: 20 }}
                 />
               )}
@@ -1143,17 +1149,17 @@ const PersonManagementPage = () => {
                   fullWidth
                   label="Fax Phone"
                   error={!!personForm.formState.errors.fax_phone}
-                  helperText={personForm.formState.errors.fax_phone?.message || "Fax phone number (optional, max 20 chars)"}
+                  helperText={personForm.formState.errors.fax_phone?.message || "Fax phone number (optional)"}
                   inputProps={{ maxLength: 20 }}
                 />
               )}
             />
           </Grid>
 
-          {/* Cell Phone with Country Code */}
+          {/* Cell Phone Section */}
           <Grid item xs={12}>
-            <Typography variant="subtitle2" gutterBottom>
-              Cell Phone (International)
+            <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 500, mt: 1 }}>
+              Cell Phone (International Format)
             </Typography>
           </Grid>
 
@@ -1175,7 +1181,7 @@ const PersonManagementPage = () => {
                         {...params}
                         label="Country Code"
                         error={!!personForm.formState.errors.cell_phone_country_code}
-                        helperText={personForm.formState.errors.cell_phone_country_code?.message || "Select country code for cell phone"}
+                        helperText={personForm.formState.errors.cell_phone_country_code?.message || "Select country code"}
                       />
                     )}
                   />
@@ -1337,39 +1343,54 @@ const PersonManagementPage = () => {
         </Typography>
         
         {addressFields.map((field, index) => (
-          <Box key={field.id} sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={4}>
+          <Box key={field.id} sx={{ mb: 4, p: 3, border: '1px solid #e0e0e0', borderRadius: 2, backgroundColor: '#fafafa' }}>
+            <Grid container spacing={3}>
+              {/* Address Header */}
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
+                  {index === 0 ? 'Primary Address' : `Additional Address ${index}`}
+                </Typography>
+              </Grid>
+
+              {/* Address Type and Primary Flag */}
+              <Grid item xs={12} md={6}>
                 <Controller
                   name={`addresses.${index}.address_type`}
                   control={personForm.control}
                   render={({ field }) => (
                     <FormControl fullWidth>
-                      <InputLabel>Address Type</InputLabel>
-                      <Select {...field} label="Address Type">
-                        <MenuItem value="street">Street/Physical</MenuItem>
-                        <MenuItem value="postal">Postal</MenuItem>
+                      <InputLabel>Address Type *</InputLabel>
+                      <Select {...field} label="Address Type *">
+                        <MenuItem value="street">Street/Physical Address</MenuItem>
+                        <MenuItem value="postal">Postal Address</MenuItem>
                       </Select>
                     </FormControl>
                   )}
                 />
               </Grid>
 
-              <Grid item xs={12} md={2}>
+              <Grid item xs={12} md={6}>
                 <Controller
                   name={`addresses.${index}.is_primary`}
                   control={personForm.control}
                   render={({ field }) => (
                     <FormControlLabel
                       control={<Checkbox {...field} checked={field.value} />}
-                      label="Primary"
+                      label="Set as Primary Address"
+                      sx={{ mt: 2 }}
                     />
                   )}
                 />
               </Grid>
 
-              {/* Address Line 1 */}
-              <Grid item xs={12} md={6}>
+              {/* Main Address Line */}
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 500, mt: 1 }}>
+                  Address Details
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12} md={8}>
                 <Controller
                   name={`addresses.${index}.address_line_1`}
                   control={personForm.control}
@@ -1378,11 +1399,11 @@ const PersonManagementPage = () => {
                       {...field}
                       onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                       fullWidth
-                      label="Address Line 1 *"
+                      label="Street Address / Address Line 1 *"
                       error={!!personForm.formState.errors.addresses?.[index]?.address_line_1}
                       helperText={
                         personForm.formState.errors.addresses?.[index]?.address_line_1?.message || 
-                        "Street address or postal address line 1 (max 35 chars) - Auto-converted to UPPERCASE"
+                        "Main street address or postal address line"
                       }
                       inputProps={{ maxLength: 35, style: { textTransform: 'uppercase' } }}
                     />
@@ -1419,7 +1440,7 @@ const PersonManagementPage = () => {
                 />
               </Grid>
 
-              {/* Address Line 2 */}
+              {/* Additional Address Lines */}
               <Grid item xs={12} md={6}>
                 <Controller
                   name={`addresses.${index}.address_line_2`}
@@ -1430,14 +1451,13 @@ const PersonManagementPage = () => {
                       onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                       fullWidth
                       label="Address Line 2"
-                      helperText="Additional address information (max 35 chars) - Auto-converted to UPPERCASE"
+                      helperText="Additional address information (optional)"
                       inputProps={{ maxLength: 35, style: { textTransform: 'uppercase' } }}
                     />
                   )}
                 />
               </Grid>
 
-              {/* Address Line 3 */}
               <Grid item xs={12} md={6}>
                 <Controller
                   name={`addresses.${index}.address_line_3`}
@@ -1448,14 +1468,20 @@ const PersonManagementPage = () => {
                       onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                       fullWidth
                       label="Address Line 3"
-                      helperText="Additional address information (max 35 chars) - Auto-converted to UPPERCASE"
+                      helperText="Additional address information (optional)"
                       inputProps={{ maxLength: 35, style: { textTransform: 'uppercase' } }}
                     />
                   )}
                 />
               </Grid>
 
-              {/* Address Line 4 - Suburb */}
+              {/* Location Details */}
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 500, mt: 1 }}>
+                  Location Details
+                </Typography>
+              </Grid>
+
               <Grid item xs={12} md={6}>
                 <Controller
                   name={`addresses.${index}.address_line_4`}
@@ -1465,15 +1491,14 @@ const PersonManagementPage = () => {
                       {...field}
                       onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                       fullWidth
-                      label="Suburb"
-                      helperText="Suburb or area (max 35 chars) - Auto-converted to UPPERCASE"
+                      label="Suburb / Area"
+                      helperText="Suburb or area name"
                       inputProps={{ maxLength: 35, style: { textTransform: 'uppercase' } }}
                     />
                   )}
                 />
               </Grid>
 
-              {/* Address Line 5 - City/Town */}
               <Grid item xs={12} md={6}>
                 <Controller
                   name={`addresses.${index}.address_line_5`}
@@ -1483,15 +1508,15 @@ const PersonManagementPage = () => {
                       {...field}
                       onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                       fullWidth
-                      label="City/Town"
-                      helperText="City or town (max 35 chars) - Auto-converted to UPPERCASE"
+                      label="City / Town"
+                      helperText="City or town name"
                       inputProps={{ maxLength: 35, style: { textTransform: 'uppercase' } }}
                     />
                   )}
                 />
               </Grid>
 
-              {/* Province Dropdown */}
+              {/* Geographic Details */}
               <Grid item xs={12} md={6}>
                 <Controller
                   name={`addresses.${index}.province_code`}
@@ -1518,15 +1543,14 @@ const PersonManagementPage = () => {
                 />
               </Grid>
 
-              {/* Country Code */}
               <Grid item xs={12} md={6}>
                 <Controller
                   name={`addresses.${index}.country_code`}
                   control={personForm.control}
                   render={({ field }) => (
                     <FormControl fullWidth>
-                      <InputLabel>Country</InputLabel>
-                      <Select {...field} label="Country">
+                      <InputLabel>Country *</InputLabel>
+                      <Select {...field} label="Country *">
                         <MenuItem value="ZA">South Africa</MenuItem>
                         <MenuItem value="US">United States</MenuItem>
                         <MenuItem value="GB">United Kingdom</MenuItem>
@@ -1536,15 +1560,16 @@ const PersonManagementPage = () => {
                 />
               </Grid>
 
+              {/* Remove Button */}
               {index > 0 && (
-                <Grid item xs={12} md={4}>
+                <Grid item xs={12}>
                   <Button
                     variant="outlined"
                     color="error"
                     onClick={() => removeAddress(index)}
-                    fullWidth
+                    sx={{ mt: 2 }}
                   >
-                    Remove Address
+                    Remove This Address
                   </Button>
                 </Grid>
               )}
