@@ -375,6 +375,7 @@ const PersonManagementPage = () => {
   // State management
   const [currentStep, setCurrentStep] = useState(0);
   const [personFound, setPersonFound] = useState<ExistingPerson | null>(null);
+  const [currentPersonId, setCurrentPersonId] = useState<string | null>(null);
   const [isNewPerson, setIsNewPerson] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [lookupLoading, setLookupLoading] = useState(false);
@@ -734,7 +735,7 @@ const PersonManagementPage = () => {
         }));
       }
       
-      const url = isNewPerson ? `${API_BASE_URL}/api/v1/persons/` : `${API_BASE_URL}/api/v1/persons/${personFound?.id}`;
+      const url = isNewPerson ? `${API_BASE_URL}/api/v1/persons/` : `${API_BASE_URL}/api/v1/persons/${currentPersonId}`;
       const method = isNewPerson ? 'POST' : 'PUT';
       
       const response = await fetch(url, {
@@ -763,6 +764,7 @@ const PersonManagementPage = () => {
   const resetForm = () => {
     setCurrentStep(0);
     setPersonFound(null);
+    setCurrentPersonId(null);
     setIsNewPerson(false);
     setIsEditMode(false);
     setStepValidation(new Array(steps.length).fill(false));
@@ -799,10 +801,16 @@ const PersonManagementPage = () => {
         console.log('Full person data received:', fullPersonData);
         console.log('Full person data keys:', Object.keys(fullPersonData || {}));
         
+        // Set the person ID for editing
+        setCurrentPersonId(fullPersonData.id);
+        console.log('Set current person ID for editing:', fullPersonData.id);
+        
         // Use the full person data instead of the summary
         populateEditForm(fullPersonData);
       } else {
         console.warn('Could not fetch full person data, using summary data');
+        // Fallback to using the person ID from the summary if available
+        setCurrentPersonId(person.id || null);
         populateEditForm(person);
       }
     } catch (error) {
@@ -945,7 +953,7 @@ const PersonManagementPage = () => {
      setTimeout(() => {
        // Skip to step 2 (Basic Information) since we're editing
        setCurrentStep(2);
-       setPersonFound(null); // Hide the found person display
+       // Keep personFound for reference but we're now in edit mode
        console.log('Form populated and moved to step 2');
      }, 100);
    };
