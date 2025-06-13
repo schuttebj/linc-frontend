@@ -1231,81 +1231,81 @@ const PersonManagementPage = () => {
             Some fields like person nature cannot be changed.
           </Alert>
         )}
-        
-        <Grid container spacing={3}>
-          {/* Identity Section */}
-          <Grid item xs={12}>
-            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
-              Identity Information
-            </Typography>
-          </Grid>
 
-          <Grid item xs={12} md={6}>
-            <Controller
-              name="business_or_surname"
-              control={personForm.control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                  fullWidth
-                  label={['01', '02'].includes(watchedPersonNature) ? 'Surname *' : 'Business Name *'}
-                  error={!!personForm.formState.errors.business_or_surname}
-                  helperText={personForm.formState.errors.business_or_surname?.message || 'Business name or surname (V00043) - Auto-converted to UPPERCASE'}
-                  inputProps={{ maxLength: 32, style: { textTransform: 'uppercase' } }}
-                />
-              )}
-            />
-          </Grid>
-
-          {['01', '02'].includes(watchedPersonNature) ? (
-            <Grid item xs={12} md={3}>
+        {/* Identity Information Section */}
+        <Box sx={{ mb: 4, p: 3, border: '1px solid #e0e0e0', borderRadius: 2, backgroundColor: '#fafafa' }}>
+          <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
+            Identity Information
+          </Typography>
+          
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
               <Controller
-                name="initials"
+                name="business_or_surname"
                 control={personForm.control}
                 render={({ field }) => (
                   <TextField
                     {...field}
                     onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                     fullWidth
-                    label="Initials *"
-                    error={!!personForm.formState.errors.initials}
-                    helperText={personForm.formState.errors.initials?.message || 'Required for natural persons (V00051)'}
-                    inputProps={{ maxLength: 3, style: { textTransform: 'uppercase' } }}
+                    label={['01', '02'].includes(watchedPersonNature) ? 'Surname *' : 'Business Name *'}
+                    error={!!personForm.formState.errors.business_or_surname}
+                    helperText={personForm.formState.errors.business_or_surname?.message || 'Business name or surname (V00043) - Auto-converted to UPPERCASE'}
+                    inputProps={{ maxLength: 32, style: { textTransform: 'uppercase' } }}
                   />
                 )}
               />
             </Grid>
-          ) : (
-            <Grid item xs={12} md={3} />
-          )}
 
-          <Grid item xs={12} md={3}>
-            <Controller
-              name="nationality_code"
-              control={personForm.control}
-              render={({ field }) => (
-                <FormControl fullWidth>
-                  <InputLabel>Nationality *</InputLabel>
-                  <Select {...field} label="Nationality *">
-                    <MenuItem value="ZA">South African</MenuItem>
-                    <MenuItem value="US">United States</MenuItem>
-                    <MenuItem value="GB">United Kingdom</MenuItem>
-                  </Select>
-                </FormControl>
-              )}
-            />
-          </Grid>
-
-          {/* Natural Person Details */}
-          {['01', '02'].includes(watchedPersonNature) && (
-            <>
-              <Grid item xs={12}>
-                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', mt: 2 }}>
-                  Personal Details
-                </Typography>
+            {['01', '02'].includes(watchedPersonNature) ? (
+              <Grid item xs={12} md={3}>
+                <Controller
+                  name="initials"
+                  control={personForm.control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                      fullWidth
+                      label="Initials *"
+                      error={!!personForm.formState.errors.initials}
+                      helperText={personForm.formState.errors.initials?.message || 'Required for natural persons (V00051)'}
+                      inputProps={{ maxLength: 3, style: { textTransform: 'uppercase' } }}
+                    />
+                  )}
+                />
               </Grid>
-              
+            ) : (
+              <Grid item xs={12} md={3} />
+            )}
+
+            <Grid item xs={12} md={3}>
+              <Controller
+                name="nationality_code"
+                control={personForm.control}
+                render={({ field }) => (
+                  <FormControl fullWidth>
+                    <InputLabel>Nationality *</InputLabel>
+                    <Select {...field} label="Nationality *">
+                      <MenuItem value="ZA">South African</MenuItem>
+                      <MenuItem value="US">United States</MenuItem>
+                      <MenuItem value="GB">United Kingdom</MenuItem>
+                    </Select>
+                  </FormControl>
+                )}
+              />
+            </Grid>
+          </Grid>
+        </Box>
+
+        {/* Personal Details Section - Only for Natural Persons */}
+        {['01', '02'].includes(watchedPersonNature) && (
+          <Box sx={{ mb: 4, p: 3, border: '1px solid #e0e0e0', borderRadius: 2, backgroundColor: '#fafafa' }}>
+            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
+              Personal Details
+            </Typography>
+            
+            <Grid container spacing={3}>
               <Grid item xs={12} md={4}>
                 <Controller
                   name="natural_person.full_name_1"
@@ -1357,145 +1357,147 @@ const PersonManagementPage = () => {
                   )}
                 />
               </Grid>
-            </>
-          )}
+            </Grid>
+          </Box>
+        )}
 
-          {/* Contact Information */}
-          <Grid item xs={12}>
-            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, color: 'primary.main', mt: 2 }}>
-              Contact Information
-            </Typography>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Controller
-              name="email_address"
-              control={personForm.control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
-                  type="email"
-                  label="Email Address"
-                  error={!!personForm.formState.errors.email_address}
-                  helperText={personForm.formState.errors.email_address?.message || "Email address (optional, max 50 chars)"}
-                  inputProps={{ maxLength: 50 }}
-                />
-              )}
-            />
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Controller
-              name="home_phone"
-              control={personForm.control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
-                  label="Home Phone"
-                  error={!!personForm.formState.errors.home_phone}
-                  helperText={personForm.formState.errors.home_phone?.message || "Home phone number (optional)"}
-                  inputProps={{ maxLength: 20 }}
-                />
-              )}
-            />
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Controller
-              name="work_phone"
-              control={personForm.control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
-                  label="Work Phone"
-                  error={!!personForm.formState.errors.work_phone}
-                  helperText={personForm.formState.errors.work_phone?.message || "Work phone number (optional)"}
-                  inputProps={{ maxLength: 20 }}
-                />
-              )}
-            />
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Controller
-              name="fax_phone"
-              control={personForm.control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
-                  label="Fax Phone"
-                  error={!!personForm.formState.errors.fax_phone}
-                  helperText={personForm.formState.errors.fax_phone?.message || "Fax phone number (optional)"}
-                  inputProps={{ maxLength: 20 }}
-                />
-              )}
-            />
-          </Grid>
-
-          {/* Cell Phone Section */}
-          <Grid item xs={12}>
-            <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 500, mt: 1 }}>
-              Cell Phone (International Format)
-            </Typography>
-          </Grid>
-
-          <Grid item xs={12} md={4}>
-            <Controller
-              name="cell_phone_country_code"
-              control={personForm.control}
-              render={({ field }) => (
-                <FormControl fullWidth error={!!personForm.formState.errors.cell_phone_country_code}>
-                  <Autocomplete
+        {/* Contact Information Section */}
+        <Box sx={{ mb: 4, p: 3, border: '1px solid #e0e0e0', borderRadius: 2, backgroundColor: '#fafafa' }}>
+          <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
+            Contact Information
+          </Typography>
+          
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Controller
+                name="email_address"
+                control={personForm.control}
+                render={({ field }) => (
+                  <TextField
                     {...field}
-                    options={Array.isArray(phoneCodes) ? phoneCodes : []}
-                    getOptionLabel={(option) => `${option.phone_code} (${option.country_name})`}
-                    value={Array.isArray(phoneCodes) ? phoneCodes.find(code => code.phone_code === field.value) || null : null}
-                    onChange={(_, newValue) => field.onChange(newValue?.phone_code || '')}
-                    loading={lookupDataLoading}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Country Code"
-                        error={!!personForm.formState.errors.cell_phone_country_code}
-                        helperText={personForm.formState.errors.cell_phone_country_code?.message || "Select country code"}
-                      />
-                    )}
+                    fullWidth
+                    type="email"
+                    label="Email Address"
+                    error={!!personForm.formState.errors.email_address}
+                    helperText={personForm.formState.errors.email_address?.message || "Email address (optional, max 50 chars)"}
+                    inputProps={{ maxLength: 50 }}
                   />
-                </FormControl>
-              )}
-            />
-          </Grid>
+                )}
+              />
+            </Grid>
 
-          <Grid item xs={12} md={8}>
-            <Controller
-              name="cell_phone"
-              control={personForm.control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
-                  label="Cell Phone Number"
-                  error={!!personForm.formState.errors.cell_phone}
-                  helperText={personForm.formState.errors.cell_phone?.message || "Cell phone number (digits only, max 15 chars)"}
-                  inputProps={{ 
-                    maxLength: 15,
-                    pattern: '[0-9]*',
-                    inputMode: 'numeric'
-                  }}
-                  onChange={(e) => {
-                    // Only allow digits
-                    const value = e.target.value.replace(/\D/g, '');
-                    field.onChange(value);
-                  }}
-                />
-              )}
-            />
+            <Grid item xs={12} md={6}>
+              <Controller
+                name="home_phone"
+                control={personForm.control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Home Phone"
+                    error={!!personForm.formState.errors.home_phone}
+                    helperText={personForm.formState.errors.home_phone?.message || "Home phone number (optional)"}
+                    inputProps={{ maxLength: 20 }}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Controller
+                name="work_phone"
+                control={personForm.control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Work Phone"
+                    error={!!personForm.formState.errors.work_phone}
+                    helperText={personForm.formState.errors.work_phone?.message || "Work phone number (optional)"}
+                    inputProps={{ maxLength: 20 }}
+                  />
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Controller
+                name="fax_phone"
+                control={personForm.control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Fax Phone"
+                    error={!!personForm.formState.errors.fax_phone}
+                    helperText={personForm.formState.errors.fax_phone?.message || "Fax phone number (optional)"}
+                    inputProps={{ maxLength: 20 }}
+                  />
+                )}
+              />
+            </Grid>
+
+            {/* Cell Phone Subsection */}
+            <Grid item xs={12}>
+              <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 500, mt: 1 }}>
+                Cell Phone (International Format)
+              </Typography>
+            </Grid>
+
+            <Grid item xs={12} md={4}>
+              <Controller
+                name="cell_phone_country_code"
+                control={personForm.control}
+                render={({ field }) => (
+                  <FormControl fullWidth error={!!personForm.formState.errors.cell_phone_country_code}>
+                    <Autocomplete
+                      {...field}
+                      options={Array.isArray(phoneCodes) ? phoneCodes : []}
+                      getOptionLabel={(option) => `${option.phone_code} (${option.country_name})`}
+                      value={Array.isArray(phoneCodes) ? phoneCodes.find(code => code.phone_code === field.value) || null : null}
+                      onChange={(_, newValue) => field.onChange(newValue?.phone_code || '')}
+                      loading={lookupDataLoading}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Country Code"
+                          error={!!personForm.formState.errors.cell_phone_country_code}
+                          helperText={personForm.formState.errors.cell_phone_country_code?.message || "Select country code"}
+                        />
+                      )}
+                    />
+                  </FormControl>
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={8}>
+              <Controller
+                name="cell_phone"
+                control={personForm.control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Cell Phone Number"
+                    error={!!personForm.formState.errors.cell_phone}
+                    helperText={personForm.formState.errors.cell_phone?.message || "Cell phone number (digits only, max 15 chars)"}
+                    inputProps={{ 
+                      maxLength: 15,
+                      pattern: '[0-9]*',
+                      inputMode: 'numeric'
+                    }}
+                    onChange={(e) => {
+                      // Only allow digits
+                      const value = e.target.value.replace(/\D/g, '');
+                      field.onChange(value);
+                    }}
+                  />
+                )}
+              />
+            </Grid>
           </Grid>
-        </Grid>
+        </Box>
       </CardContent>
     </Card>
   );
