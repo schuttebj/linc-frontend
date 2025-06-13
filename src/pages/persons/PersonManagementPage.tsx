@@ -788,7 +788,7 @@ const PersonManagementPage = () => {
     // We need to fetch the complete person record for editing
     try {
       console.log('Fetching complete person record...');
-      const response = await fetch(`${API_BASE_URL}/api/v1/persons/${person.id || 'search'}?id_type=${person.id_type}&id_number=${person.id_number}`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/persons/search?id_type=${person.id_type}&id_number=${person.id_number}`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`
         }
@@ -811,7 +811,7 @@ const PersonManagementPage = () => {
     }
   };
 
-  const populateEditForm = (person: ExistingPerson) => {
+  const populateEditForm = (person: ExistingPerson | any) => {
     console.log('Populating form with person data:', person);
     console.log('Person business_or_surname:', person.business_or_surname);
     console.log('Person natural_person:', person.natural_person);
@@ -819,25 +819,25 @@ const PersonManagementPage = () => {
     console.log('Person addresses:', person.addresses);
     
     // Pre-populate form with existing person data for editing
-    // Note: API returns different field names than our interface expects
+    // Handle both summary data (ExistingPerson) and full PersonResponse from backend
     const personData: PersonManagementForm = {
-      business_or_surname: person?.name || person?.business_or_surname || '',
+      business_or_surname: person?.business_or_surname || person?.name || '',
       initials: person?.initials || '',
       person_nature: person?.person_nature || '01',
       nationality_code: person?.nationality_code || 'ZA',
-      preferred_language: 'en', // Default
+      preferred_language: person?.preferred_language || 'en',
       email_address: person?.email_address || '',
-      home_phone: '', // Not available in summary
-      work_phone: '', // Not available in summary
-      cell_phone_country_code: '+27', // Default for SA
+      home_phone: person?.home_phone || '',
+      work_phone: person?.work_phone || '',
+      cell_phone_country_code: person?.cell_phone_country_code || '+27',
       cell_phone: person?.cell_phone || '',
-      fax_phone: '', // Not available in summary
+      fax_phone: person?.fax_phone || '',
       natural_person: person.natural_person ? {
         full_name_1: person.natural_person.full_name_1 || '',
         full_name_2: person.natural_person.full_name_2 || '',
-        full_name_3: '', // Not in summary
+        full_name_3: person.natural_person.full_name_3 || '',
         birth_date: person.natural_person.birth_date || '',
-        preferred_language_code: 'en' // Default
+        preferred_language_code: person.natural_person.preferred_language_code || 'en'
       } : {
         full_name_1: '',
         full_name_2: '',
@@ -845,14 +845,14 @@ const PersonManagementPage = () => {
         birth_date: '',
         preferred_language_code: 'en'
       },
-      aliases: person.aliases?.map(alias => ({
+      aliases: person.aliases?.map((alias: any) => ({
         id_document_type_code: alias.id_document_type_code || '02',
         id_document_number: alias.id_document_number || '',
-        country_of_issue: 'ZA', // Default, would need to fetch from backend
-        name_in_document: '', // Not in summary
-        alias_status: '1', // Default active
+        country_of_issue: alias.country_of_issue || 'ZA',
+        name_in_document: alias.name_in_document || '',
+        alias_status: alias.alias_status || '1',
         is_current: alias.is_current !== undefined ? alias.is_current : true,
-        id_document_expiry_date: '' // Not in summary
+        id_document_expiry_date: alias.id_document_expiry_date || ''
       })) || [{
         id_document_type_code: person?.id_type || '02',
         id_document_number: person?.id_number || '',
@@ -862,16 +862,16 @@ const PersonManagementPage = () => {
         is_current: true,
         id_document_expiry_date: ''
       }],
-      addresses: person.addresses?.map(address => ({
+      addresses: person.addresses?.map((address: any) => ({
         address_type: address.address_type || 'street',
         address_line_1: address.address_line_1 || '',
-        address_line_2: '', // Not in summary
-        address_line_3: '', // Not in summary
+        address_line_2: address.address_line_2 || '',
+        address_line_3: address.address_line_3 || '',
         address_line_4: address.address_line_4 || '',
-        address_line_5: '', // Not in summary
+        address_line_5: address.address_line_5 || '',
         postal_code: address.postal_code || '',
-        country_code: 'ZA', // Default
-        province_code: '', // Not in summary
+        country_code: address.country_code || 'ZA',
+        province_code: address.province_code || '',
         is_primary: address.is_primary !== undefined ? address.is_primary : true
       })) || [{
         address_type: 'street',
