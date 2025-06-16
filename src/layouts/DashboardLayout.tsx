@@ -27,7 +27,9 @@ import {
   ExpandMore,
   AccountCircle,
   Logout,
-  Settings
+  Settings,
+  LocationCity,
+  Business
 } from '@mui/icons-material';
 import { useState } from 'react';
 import { Collapse, List as MuiList } from '@mui/material';
@@ -45,7 +47,14 @@ const navigationItems = [
       { text: 'Search & Browse', path: '/dashboard/persons/search', icon: <Search /> },
     ]
   },
-  { text: 'Administration', path: '/dashboard/admin/countries', icon: <AdminPanelSettings /> },
+  { 
+    text: 'Administration', 
+    icon: <AdminPanelSettings />, 
+    subItems: [
+      { text: 'Countries', path: '/dashboard/admin/countries', icon: <Settings /> },
+      { text: 'Location Management', path: '/dashboard/admin/locations', icon: <LocationCity /> },
+    ]
+  },
 ];
 
 const DashboardLayout: React.FC = () => {

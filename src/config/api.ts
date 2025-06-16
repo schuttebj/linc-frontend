@@ -45,6 +45,20 @@ export const API_ENDPOINTS = {
   allLookups: `${API_BASE_URL}/api/${API_VERSION}/lookups/all`,
   validatePhone: `${API_BASE_URL}/api/${API_VERSION}/lookups/validate-phone`,
   validateProvince: `${API_BASE_URL}/api/${API_VERSION}/lookups/validate-province`,
+  
+  // Location Management endpoints (NEW)
+  userGroups: `${API_BASE_URL}/api/${API_VERSION}/user-groups`,
+  userGroupById: (id: string) => `${API_BASE_URL}/api/${API_VERSION}/user-groups/${id}`,
+  userGroupsByProvince: (provinceCode: string) => `${API_BASE_URL}/api/${API_VERSION}/user-groups/by-province/${provinceCode}`,
+  userGroupsStatistics: `${API_BASE_URL}/api/${API_VERSION}/user-groups/statistics`,
+  userGroupValidateCode: (code: string) => `${API_BASE_URL}/api/${API_VERSION}/user-groups/validate-code/${code}`,
+  
+  locations: `${API_BASE_URL}/api/${API_VERSION}/locations`,
+  locationById: (id: string) => `${API_BASE_URL}/api/${API_VERSION}/locations/${id}`,
+  locationsByUserGroup: (userGroupId: string) => `${API_BASE_URL}/api/${API_VERSION}/locations/by-user-group/${userGroupId}`,
+  locationsByProvince: (provinceCode: string) => `${API_BASE_URL}/api/${API_VERSION}/locations/by-province/${provinceCode}`,
+  locationsStatistics: `${API_BASE_URL}/api/${API_VERSION}/locations/statistics`,
+  locationsNearby: `${API_BASE_URL}/api/${API_VERSION}/locations/nearby`,
 } as const;
 
 /**

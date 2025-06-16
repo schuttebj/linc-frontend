@@ -15,6 +15,7 @@ import HomePage from './pages/HomePage';
 import PersonSearchPage from './pages/persons/PersonSearchPage';
 import PersonManagementPage from './pages/persons/PersonManagementPage';
 import CountryConfigurationPage from './pages/admin/CountryConfigurationPage';
+import LocationManagementPage from './pages/admin/LocationManagementPage';
 
 function App() {
   return (
@@ -73,6 +74,14 @@ function App() {
                 element={
                   <ProtectedRoute requiredRole="admin">
                     <CountryConfigurationPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="locations" 
+                element={
+                  <ProtectedRoute requiredPermission="user_group_read">
+                    <LocationManagementPage />
                   </ProtectedRoute>
                 } 
               />
