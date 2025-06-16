@@ -28,8 +28,7 @@ import {
   AccountCircle,
   Logout,
   Settings,
-  LocationCity,
-  Business
+  LocationCity
 } from '@mui/icons-material';
 import { useState } from 'react';
 import { Collapse, List as MuiList } from '@mui/material';

@@ -16,8 +16,7 @@ import {
   LocationListFilter,
   LocationStatistics,
   LocationResource,
-  UserLocationAssignment,
-  PaginatedResponse
+  UserLocationAssignment
 } from '../types/location';
 
 /**
