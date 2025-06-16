@@ -59,11 +59,16 @@ const navigationItems = [
 const DashboardLayout: React.FC = () => {
   const location = useLocation();
   const [personsOpen, setPersonsOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const { user, logout } = useAuth();
 
   const handlePersonsClick = () => {
     setPersonsOpen(!personsOpen);
+  };
+
+  const handleAdminClick = () => {
+    setAdminOpen(!adminOpen);
   };
 
   const handleUserMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -167,15 +172,15 @@ const DashboardLayout: React.FC = () => {
               {item.subItems ? (
                 <>
                   <ListItem disablePadding>
-                    <ListItemButton onClick={handlePersonsClick}>
+                    <ListItemButton onClick={item.text === 'Persons' ? handlePersonsClick : handleAdminClick}>
                       <ListItemIcon>
                         {item.icon}
                       </ListItemIcon>
                       <ListItemText primary={item.text} />
-                      {personsOpen ? <ExpandLess /> : <ExpandMore />}
+                      {(item.text === 'Persons' ? personsOpen : adminOpen) ? <ExpandLess /> : <ExpandMore />}
                     </ListItemButton>
                   </ListItem>
-                  <Collapse in={personsOpen} timeout="auto" unmountOnExit>
+                  <Collapse in={item.text === 'Persons' ? personsOpen : adminOpen} timeout="auto" unmountOnExit>
                     <MuiList component="div" disablePadding>
                       {item.subItems.map((subItem) => (
                         <ListItem key={subItem.text} disablePadding>
