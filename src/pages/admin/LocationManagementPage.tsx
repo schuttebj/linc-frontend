@@ -19,9 +19,6 @@ import {
   CircularProgress
 } from '@mui/material';
 import {
-  Business as BusinessIcon,
-  LocationOn as LocationIcon,
-  People as PeopleIcon,
   Analytics as StatsIcon,
   Refresh as RefreshIcon,
   ArrowForward as ArrowForwardIcon,
@@ -88,8 +85,8 @@ const LocationManagementPage: React.FC = () => {
     setLoading(true);
     try {
       const [userGroupStatsData, locationStatsData] = await Promise.all([
-        userGroupService.getUserGroupStatistics(),
-        locationService.getLocationStatistics()
+        userGroupService.getStatistics(),
+        locationService.getStatistics()
       ]);
       setUserGroupStats(userGroupStatsData);
       setLocationStats(locationStatsData);
@@ -108,7 +105,7 @@ const LocationManagementPage: React.FC = () => {
       case 'locations':
         return locationStats?.total_locations || 0;
       case 'assignments':
-        return locationStats?.total_assignments || 0;
+        return locationStats?.active_count || 0;
       default:
         return 0;
     }
@@ -148,7 +145,7 @@ const LocationManagementPage: React.FC = () => {
                     Total User Groups
                   </Typography>
                   <Typography variant="caption" color="success.main">
-                    {userGroupStats?.active_user_groups || 0} active
+                    {userGroupStats?.active_count || 0} active
                   </Typography>
                 </Box>
               </Box>
@@ -169,7 +166,7 @@ const LocationManagementPage: React.FC = () => {
                     Total Locations
                   </Typography>
                   <Typography variant="caption" color="success.main">
-                    {locationStats?.operational_locations || 0} operational
+                    {locationStats?.active_count || 0} operational
                   </Typography>
                 </Box>
               </Box>
@@ -190,7 +187,7 @@ const LocationManagementPage: React.FC = () => {
                     Staff Assignments
                   </Typography>
                   <Typography variant="caption" color="success.main">
-                    {locationStats?.active_assignments || 0} active
+                    {locationStats?.active_count || 0} active
                   </Typography>
                 </Box>
               </Box>
@@ -247,7 +244,7 @@ const LocationManagementPage: React.FC = () => {
                       size="small" 
                       color={item.color}
                       endIcon={<ArrowForwardIcon />}
-                      onClick={(e) => {
+                      onClick={(e: React.MouseEvent) => {
                         e.stopPropagation();
                         navigate(item.path);
                       }}
@@ -317,8 +314,8 @@ const LocationManagementPage: React.FC = () => {
       {(userGroupStats || locationStats) && (
         <Alert severity="info" sx={{ mt: 3 }}>
           <Typography variant="body2">
-            System Overview: {userGroupStats?.total_user_groups || 0} user groups managing {locationStats?.total_locations || 0} locations 
-            with {locationStats?.total_assignments || 0} staff assignments across {Object.keys(userGroupStats?.user_groups_by_province || {}).length} provinces.
+                       System Overview: {userGroupStats?.total_user_groups || 0} user groups managing {locationStats?.total_locations || 0} locations 
+           with {locationStats?.active_count || 0} staff assignments across {Object.keys(userGroupStats?.by_province || {}).length} provinces.
           </Typography>
         </Alert>
       )}
