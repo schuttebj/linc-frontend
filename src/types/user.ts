@@ -122,44 +122,55 @@ export enum AuthorityLevel {
 
 // Create/Update request interfaces
 export interface CreateUserRequest {
-  // Core identification
-  userGroupCode: string;
-  officeCode: string;
-  userName: string;
-  userTypeCode: UserType;
+  // Core identification (snake_case to match backend)
+  user_group_code: string;
+  office_code: string;
+  user_name: string;
+  user_type_code: UserType;
   
   // Authentication
   username: string;
   password: string;
   
-  // Personal details
-  personalDetails: PersonalDetails;
+  // Personal details (snake_case to match backend)
+  personal_details: {
+    id_type: IDType;
+    id_number: string;
+    full_name: string;
+    email: string;
+    phone_number?: string;
+    alternative_phone?: string;
+  };
   
-  // Geographic assignment
-  geographicAssignment: GeographicAssignment;
+  // Geographic assignment (snake_case to match backend)
+  geographic_assignment: {
+    country_code: string;
+    province_code: string;
+    region?: string;
+  };
   
-  // Job details
-  employeeId?: string;
+  // Job details (snake_case to match backend)
+  employee_id?: string;
   department?: string;
-  jobTitle?: string;
-  infrastructureNumber?: string;
+  job_title?: string;
+  infrastructure_number?: string;
   
-  // Status
+  // Status (snake_case to match backend)
   status: UserStatus;
-  isActive: boolean;
+  is_active: boolean;
   
-  // Role assignments
-  roleIds: string[];
-  permissionIds: string[];
+  // Role assignments (snake_case to match backend)
+  role_ids: string[];
+  permission_ids: string[];
   
-  // Security
-  requirePasswordChange: boolean;
-  require2fa: boolean;
+  // Security (snake_case to match backend)
+  require_password_change: boolean;
+  require_2fa: boolean;
   
-  // System settings
+  // System settings (snake_case to match backend)
   language: string;
   timezone: string;
-  dateFormat: string;
+  date_format: string;
 }
 
 export interface UpdateUserRequest {

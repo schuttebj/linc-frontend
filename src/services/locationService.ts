@@ -194,32 +194,108 @@ export const locationResourceService = {
 };
 
 /**
- * User Location Assignment API Services
+ * Staff Assignment API Services (NEW - matches backend endpoints)
+ */
+export const staffAssignmentService = {
+  // Get staff assignments for a location
+  getByLocation: async (locationId: string): Promise<UserLocationAssignment[]> => {
+    return api.get<UserLocationAssignment[]>(`${API_ENDPOINTS.locations}/${locationId}/staff`);
+  },
+
+  // Assign staff to location
+  assignStaff: async (locationId: string, data: {
+    user_id: string;
+    assignment_type: string;
+    assignment_status?: string;
+    effective_date: string;
+    expiry_date?: string;
+    access_level?: string;
+    can_manage_location?: boolean;
+    can_assign_others?: boolean;
+    can_view_reports?: boolean;
+    can_manage_resources?: boolean;
+    work_schedule?: string;
+    responsibilities?: string;
+    assignment_reason?: string;
+    notes?: string;
+    is_active?: boolean;
+  }): Promise<UserLocationAssignment> => {
+    return api.post<UserLocationAssignment>(`${API_ENDPOINTS.locations}/${locationId}/staff`, data);
+  },
+
+  // Update staff assignment
+  updateAssignment: async (
+    locationId: string, 
+    assignmentId: string, 
+    data: Partial<{
+      assignment_type: string;
+      assignment_status: string;
+      effective_date: string;
+      expiry_date?: string;
+      access_level: string;
+      can_manage_location: boolean;
+      can_assign_others: boolean;
+      can_view_reports: boolean;
+      can_manage_resources: boolean;
+      work_schedule?: string;
+      responsibilities?: string;
+      assignment_reason?: string;
+      notes?: string;
+      is_active: boolean;
+    }>
+  ): Promise<UserLocationAssignment> => {
+    return api.put<UserLocationAssignment>(`${API_ENDPOINTS.locations}/${locationId}/staff/${assignmentId}`, data);
+  },
+
+  // Remove staff assignment
+  removeAssignment: async (locationId: string, assignmentId: string): Promise<UserLocationAssignment> => {
+    return api.delete<UserLocationAssignment>(`${API_ENDPOINTS.locations}/${locationId}/staff/${assignmentId}`);
+  }
+};
+
+/**
+ * User Location Assignment API Services (Legacy - for backward compatibility)
  */
 export const userLocationAssignmentService = {
   // Get assignments for a location
   getByLocation: async (locationId: string): Promise<UserLocationAssignment[]> => {
-    return api.get<UserLocationAssignment[]>(`${API_ENDPOINTS.locations}/${locationId}/assignments`);
+    return staffAssignmentService.getByLocation(locationId);
   },
 
   // Get assignments for a user
   getByUser: async (userId: string): Promise<UserLocationAssignment[]> => {
-    return api.get<UserLocationAssignment[]>(`/api/v1/users/${userId}/location-assignments`);
+    // This endpoint needs to be added to backend if needed
+    throw new Error('User location assignments by user not yet implemented - use staffAssignmentService.getByLocation() instead');
   },
 
   // Create assignment
-  create: async (data: Omit<UserLocationAssignment, 'id' | 'created_at' | 'updated_at' | 'is_active'>): Promise<UserLocationAssignment> => {
-    return api.post<UserLocationAssignment>('/api/v1/user-location-assignments', data);
+  create: async (data: {
+    user_id: string;
+    location_id: string;
+    assignment_type: string;
+    start_date: string;
+    end_date?: string;
+    notes?: string;
+  }): Promise<UserLocationAssignment> => {
+    return staffAssignmentService.assignStaff(data.location_id, {
+      user_id: data.user_id,
+      assignment_type: data.assignment_type,
+      effective_date: data.start_date,
+      expiry_date: data.end_date,
+      notes: data.notes
+    });
   },
 
-  // Update assignment
+  // Update assignment  
   update: async (assignmentId: string, data: Partial<UserLocationAssignment>): Promise<UserLocationAssignment> => {
-    return api.put<UserLocationAssignment>(`/api/v1/user-location-assignments/${assignmentId}`, data);
+    // This would need the location ID - for now, throw an error directing to use new service
+    throw new Error('Use staffAssignmentService.updateAssignment() instead - requires locationId');
   },
 
   // Delete assignment
   delete: async (assignmentId: string): Promise<void> => {
-    return api.delete<void>(`/api/v1/user-location-assignments/${assignmentId}`);
+    // This would need the location ID - for now, throw an error directing to use new service  
+    throw new Error('Use staffAssignmentService.removeAssignment() instead - requires locationId');
   }
 };
 

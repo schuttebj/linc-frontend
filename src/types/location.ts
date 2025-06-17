@@ -29,6 +29,7 @@ export enum RegistrationStatus {
 export enum OfficeType {
   PRIMARY = 'primary',
   BRANCH = 'branch',
+  SPECIALIZED = 'specialized',
   MOBILE = 'mobile',
   SUPPORT = 'support'
 }
@@ -80,13 +81,19 @@ export enum ResourceStatus {
 export enum AssignmentType {
   PRIMARY = 'primary',
   SECONDARY = 'secondary',
-  TEMPORARY = 'temporary'
+  TEMPORARY = 'temporary',
+  BACKUP = 'backup',
+  TRAINING = 'training',
+  SUPERVISION = 'supervision',
+  MAINTENANCE = 'maintenance'
 }
 
 export enum AssignmentStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
-  SUSPENDED = 'suspended'
+  SUSPENDED = 'suspended',
+  PENDING = 'pending',
+  EXPIRED = 'expired'
 }
 
 // Base interfaces
@@ -118,15 +125,31 @@ export interface UserGroup extends BaseEntity {
   user_group_code: string;
   user_group_name: string;
   user_group_type: UserGroupType;
-  infrastructure_type_code: number;
+  infrastructure_type_code?: number; // Legacy field
   province_code: string;
   province_name?: string;
   registration_status: RegistrationStatus;
-  parent_user_group_id?: string;
+  parent_group_id?: string;
   parent_user_group?: UserGroup;
-  description?: string;
+  suspended_until?: string;
   contact_person?: string;
   phone_number?: string;
+  email?: string;
+  operational_notes?: string;
+  service_area_description?: string;
+  
+  // System variables from backend
+  is_provincial_help_desk: boolean;
+  is_national_help_desk: boolean;
+  
+  // Computed properties from backend
+  authority_level: string;
+  is_dltc: boolean;
+  can_access_all_provinces: boolean;
+  can_access_province_data: boolean;
+  
+  // Legacy compatibility
+  description?: string;
   email_address?: string;
   address?: Address;
   
@@ -140,29 +163,44 @@ export interface UserGroupCreate {
   user_group_code: string;
   user_group_name: string;
   user_group_type: UserGroupType;
-  infrastructure_type_code: number;
   province_code: string;
+  parent_group_id?: string;
+  is_provincial_help_desk?: boolean;
+  is_national_help_desk?: boolean;
   registration_status?: RegistrationStatus;
-  parent_user_group_id?: string;
-  description?: string;
+  suspended_until?: string;
   contact_person?: string;
   phone_number?: string;
+  email?: string;
+  operational_notes?: string;
+  service_area_description?: string;
+  is_active?: boolean;
+  
+  // Legacy compatibility
+  infrastructure_type_code?: number;
+  description?: string;
   email_address?: string;
   address?: Omit<Address, 'id'>;
 }
 
 export interface UserGroupUpdate {
   user_group_name?: string;
-  user_group_type?: UserGroupType;
-  infrastructure_type_code?: number;
-  registration_status?: RegistrationStatus;
-  parent_user_group_id?: string;
-  description?: string;
   contact_person?: string;
   phone_number?: string;
+  email?: string;
+  operational_notes?: string;
+  service_area_description?: string;
+  registration_status?: RegistrationStatus;
+  suspended_until?: string;
+  is_active?: boolean;
+  
+  // Legacy compatibility
+  user_group_type?: UserGroupType;
+  infrastructure_type_code?: number;
+  parent_user_group_id?: string;
+  description?: string;
   email_address?: string;
   address?: Omit<Address, 'id'>;
-  is_active?: boolean;
 }
 
 // Office interfaces
@@ -175,22 +213,59 @@ export interface Office extends BaseEntity {
   description?: string;
   contact_person?: string;
   phone_number?: string;
-  email_address?: string;
+  email?: string;
+  daily_capacity?: number;
+  staff_count?: number;
+  is_operational: boolean;
+  operating_hours?: string;
+  service_types?: string;
   
-  // Capacity management
-  max_users?: number;
-  current_users?: number;
-  max_daily_applications?: number;
+  // Computed properties from backend
+  full_office_code: string;
+  is_primary_office: boolean;
+  is_mobile_unit: boolean;
   
   // Statistics
   location_count?: number;
   user_count?: number;
 }
 
+export interface OfficeCreate {
+  office_code: string;
+  office_name: string;
+  user_group_id: string;
+  office_type?: OfficeType;
+  description?: string;
+  contact_person?: string;
+  phone_number?: string;
+  email?: string;
+  daily_capacity?: number;
+  staff_count?: number;
+  is_active?: boolean;
+  is_operational?: boolean;
+  operating_hours?: string;
+  service_types?: string;
+}
+
+export interface OfficeUpdate {
+  office_name?: string;
+  office_type?: OfficeType;
+  description?: string;
+  contact_person?: string;
+  phone_number?: string;
+  email?: string;
+  daily_capacity?: number;
+  staff_count?: number;
+  is_active?: boolean;
+  is_operational?: boolean;
+  operating_hours?: string;
+  service_types?: string;
+}
+
 // Location interfaces  
 export interface Location extends BaseEntity {
   location_name: string;
-  location_code?: string;
+  location_code: string;
   user_group_id: string;
   user_group?: UserGroup;
   office_id?: string;
@@ -199,8 +274,14 @@ export interface Location extends BaseEntity {
   operational_status: OperationalStatus;
   location_scope: LocationScope;
   
-  // Address information
-  address: Address;
+  // Address information (flattened from backend)
+  address_line_1: string;
+  address_line_2?: string;
+  address_line_3?: string;
+  city: string;
+  province_code: string;
+  postal_code?: string;
+  country_code: string;
   
   // Geographic coordinates
   latitude?: number;
@@ -209,23 +290,49 @@ export interface Location extends BaseEntity {
   // Contact information
   contact_person?: string;
   phone_number?: string;
-  email_address?: string;
+  fax_number?: string;
+  email?: string;
   
   // Capacity management
-  max_users?: number;
-  current_users?: number;
-  max_daily_capacity?: number;
+  daily_capacity?: number;
   current_load?: number;
+  max_concurrent_operations?: number;
   
   // Service configuration
   services_offered?: string[];
-  operating_hours?: string;
-  appointment_required?: boolean;
+  operating_hours?: any;
+  special_hours?: any;
   
-  // Printing configuration
+  // Facility details
+  facility_description?: string;
+  accessibility_features?: string[];
+  parking_availability?: boolean;
+  public_transport_access?: string;
+  operational_notes?: string;
+  public_instructions?: string;
+  
+  // Status flags
+  is_public: boolean;
+  requires_appointment: boolean;
+  
+  // Computed properties from backend
+  full_address: string;
+  is_dltc: boolean;
+  is_printing_facility: boolean;
+  available_capacity: number;
+  capacity_utilization: number;
+  is_operational: boolean;
+  
+  // Legacy compatibility
+  address?: Address;
+  max_users?: number;
+  current_users?: number;
+  max_daily_capacity?: number;
+  email_address?: string;
   has_centralized_printing?: boolean;
   has_onsite_printing?: boolean;
   printer_count?: number;
+  appointment_required?: boolean;
   
   // Statistics
   resource_count?: number;
@@ -240,20 +347,47 @@ export interface LocationCreate {
   infrastructure_type: InfrastructureType;
   operational_status?: OperationalStatus;
   location_scope?: LocationScope;
-  address: Omit<Address, 'id'>;
+  
+  // Address information (can be flat or nested)
+  address_line_1?: string;
+  address_line_2?: string;
+  address_line_3?: string;
+  city?: string;
+  province_code?: string;
+  postal_code?: string;
+  country_code?: string;
+  address?: Omit<Address, 'id'>; // Alternative nested format
+  
   latitude?: number;
   longitude?: number;
   contact_person?: string;
   phone_number?: string;
-  email_address?: string;
+  fax_number?: string;
+  email?: string;
+  daily_capacity?: number;
+  current_load?: number;
+  max_concurrent_operations?: number;
+  services_offered?: string[];
+  operating_hours?: any;
+  special_hours?: any;
+  facility_description?: string;
+  accessibility_features?: string[];
+  parking_availability?: boolean;
+  public_transport_access?: string;
+  operational_notes?: string;
+  public_instructions?: string;
+  is_active?: boolean;
+  is_public?: boolean;
+  requires_appointment?: boolean;
+  
+  // Legacy compatibility
   max_users?: number;
   max_daily_capacity?: number;
-  services_offered?: string[];
-  operating_hours?: string;
-  appointment_required?: boolean;
+  email_address?: string;
   has_centralized_printing?: boolean;
   has_onsite_printing?: boolean;
   printer_count?: number;
+  appointment_required?: boolean;
 }
 
 export interface LocationUpdate {
@@ -263,24 +397,44 @@ export interface LocationUpdate {
   infrastructure_type?: InfrastructureType;
   operational_status?: OperationalStatus;
   location_scope?: LocationScope;
-  address?: Omit<Address, 'id'>;
+  address_line_1?: string;
+  address_line_2?: string;
+  address_line_3?: string;
+  city?: string;
+  postal_code?: string;
   latitude?: number;
   longitude?: number;
   contact_person?: string;
   phone_number?: string;
-  email_address?: string;
+  fax_number?: string;
+  email?: string;
+  daily_capacity?: number;
+  current_load?: number;
+  max_concurrent_operations?: number;
+  services_offered?: string[];
+  operating_hours?: any;
+  special_hours?: any;
+  facility_description?: string;
+  accessibility_features?: string[];
+  parking_availability?: boolean;
+  public_transport_access?: string;
+  operational_notes?: string;
+  public_instructions?: string;
+  is_active?: boolean;
+  is_public?: boolean;
+  requires_appointment?: boolean;
+  
+  // Legacy compatibility
+  address?: Omit<Address, 'id'>;
   max_users?: number;
   max_daily_capacity?: number;
-  services_offered?: string[];
-  operating_hours?: string;
-  appointment_required?: boolean;
+  email_address?: string;
   has_centralized_printing?: boolean;
   has_onsite_printing?: boolean;
   printer_count?: number;
-  is_active?: boolean;
+  appointment_required?: boolean;
 }
 
-// Resource interfaces
 export interface LocationResource extends BaseEntity {
   resource_name: string;
   resource_type: ResourceType;
@@ -301,16 +455,52 @@ export interface LocationResource extends BaseEntity {
   notes?: string;
 }
 
-// User Assignment interfaces
+// Enhanced User Location Assignment interface (matches backend)
 export interface UserLocationAssignment extends BaseEntity {
   user_id: string;
   location_id: string;
   location?: Location;
+  office_id?: string;
+  office?: Office;
+  
+  // Assignment classification
   assignment_type: AssignmentType;
   assignment_status: AssignmentStatus;
-  start_date: string;
-  end_date?: string;
+  
+  // Assignment validity
+  effective_date: string;
+  expiry_date?: string;
+  
+  // Access and permissions (NEW - from enhanced backend)
+  access_level: string;
+  can_manage_location: boolean;
+  can_assign_others: boolean;
+  can_view_reports: boolean;
+  can_manage_resources: boolean;
+  
+  // Operational details
+  work_schedule?: string;
+  responsibilities?: string;
+  
+  // Assignment context
+  assigned_by?: string;
+  assignment_reason?: string;
   notes?: string;
+  
+  // Activity tracking (NEW - from enhanced backend)
+  last_activity_date?: string;
+  total_hours_worked: number;
+  
+  // Computed properties from backend
+  is_valid_assignment: boolean;
+  is_primary_assignment: boolean;
+  is_temporary_assignment: boolean;
+  days_until_expiry: number;
+  assignment_duration_days: number;
+  
+  // Legacy compatibility
+  start_date?: string;
+  end_date?: string;
   
   // User information (populated by backend)
   user_username?: string;
@@ -318,7 +508,43 @@ export interface UserLocationAssignment extends BaseEntity {
   user_email?: string;
 }
 
-// Filter and statistics interfaces
+// Create and Update interfaces for staff assignments
+export interface StaffAssignmentCreate {
+  user_id: string;
+  assignment_type: AssignmentType;
+  assignment_status?: AssignmentStatus;
+  effective_date: string;
+  expiry_date?: string;
+  access_level?: string;
+  can_manage_location?: boolean;
+  can_assign_others?: boolean;
+  can_view_reports?: boolean;
+  can_manage_resources?: boolean;
+  work_schedule?: string;
+  responsibilities?: string;
+  assignment_reason?: string;
+  notes?: string;
+  is_active?: boolean;
+}
+
+export interface StaffAssignmentUpdate {
+  assignment_type?: AssignmentType;
+  assignment_status?: AssignmentStatus;
+  effective_date?: string;
+  expiry_date?: string;
+  access_level?: string;
+  can_manage_location?: boolean;
+  can_assign_others?: boolean;
+  can_view_reports?: boolean;
+  can_manage_resources?: boolean;
+  work_schedule?: string;
+  responsibilities?: string;
+  assignment_reason?: string;
+  notes?: string;
+  is_active?: boolean;
+}
+
+// Filter interfaces
 export interface UserGroupListFilter {
   province_code?: string;
   user_group_type?: UserGroupType;
@@ -358,7 +584,7 @@ export interface LocationStatistics {
   capacity_utilization: number;
 }
 
-// Form data interfaces for UI
+// Form data interfaces
 export interface UserGroupFormData extends UserGroupCreate {}
 export interface LocationFormData extends LocationCreate {}
 
