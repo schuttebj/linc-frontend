@@ -79,21 +79,21 @@ export enum ResourceStatus {
 }
 
 export enum AssignmentType {
-  PRIMARY = 'primary',
-  SECONDARY = 'secondary',
-  TEMPORARY = 'temporary',
-  BACKUP = 'backup',
-  TRAINING = 'training',
-  SUPERVISION = 'supervision',
-  MAINTENANCE = 'maintenance'
+  PRIMARY = 'PRIMARY',
+  SECONDARY = 'SECONDARY',
+  TEMPORARY = 'TEMPORARY',
+  BACKUP = 'BACKUP',
+  TRAINING = 'TRAINING',
+  SUPERVISION = 'SUPERVISION',
+  MAINTENANCE = 'MAINTENANCE'
 }
 
 export enum AssignmentStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  SUSPENDED = 'suspended',
-  PENDING = 'pending',
-  EXPIRED = 'expired'
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  PENDING = 'PENDING',
+  EXPIRED = 'EXPIRED'
 }
 
 // Base interfaces
