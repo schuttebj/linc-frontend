@@ -5,18 +5,25 @@
 
 // Enums matching backend
 export enum UserGroupType {
-  FIXED_DLTC = 'fixed_dltc',
-  MOBILE_DLTC = 'mobile_dltc',
-  REGIONAL_AUTHORITY = 'regional_authority', 
-  PLAMARK = 'plamark',
-  NHELPDESK = 'nhelpdesk'
+  FIXED_DLTC = '10',
+  MOBILE_DLTC = '11',
+  PRINTING_CENTER = '12',
+  REGISTERING_AUTHORITY = '20',
+  PROVINCIAL_HELP_DESK = '30',
+  NATIONAL_HELP_DESK = '31',
+  VEHICLE_TESTING_STATION = '40',
+  ADMIN_OFFICE = '50'
 }
 
 export enum RegistrationStatus {
-  PENDING = 'pending',
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  SUSPENDED = 'suspended'
+  PENDING_REGISTRATION = '1',
+  REGISTERED = '2',
+  SUSPENDED = '3',
+  PENDING_RENEWAL = '4',
+  CANCELLED = '5',
+  PENDING_INSPECTION = '6',
+  INSPECTION_FAILED = '7',
+  DEREGISTERED = '8'
 }
 
 export enum OfficeType {
@@ -27,23 +34,32 @@ export enum OfficeType {
 }
 
 export enum InfrastructureType {
-  FIXED_DLTC = 'fixed_dltc',
-  MOBILE_DLTC = 'mobile_dltc',
-  REGIONAL_AUTHORITY = 'regional_authority',
-  PLAMARK = 'plamark',
-  NHELPDESK = 'nhelpdesk'
+  FIXED_DLTC = '10',
+  MOBILE_DLTC = '11',
+  PRINTING_CENTER = '12',
+  COMBINED_CENTER = '13',
+  ADMIN_OFFICE = '14',
+  REGISTERING_AUTHORITY = '20',
+  PROVINCIAL_OFFICE = '30',
+  NATIONAL_OFFICE = '31',
+  VEHICLE_TESTING = '40',
+  HELP_DESK = '50'
 }
 
 export enum OperationalStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
+  OPERATIONAL = 'operational',
   MAINTENANCE = 'maintenance',
-  SUSPENDED = 'suspended'
+  SUSPENDED = 'suspended',
+  SETUP = 'setup',
+  DECOMMISSIONED = 'decommissioned',
+  INSPECTION = 'inspection'
 }
 
 export enum LocationScope {
   NATIONAL = 'national',
-  PROVINCIAL = 'provincial'
+  PROVINCIAL = 'provincial',
+  REGIONAL = 'regional',
+  LOCAL = 'local'
 }
 
 export enum ResourceType {

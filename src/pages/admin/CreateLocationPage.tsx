@@ -80,7 +80,7 @@ const CreateLocationPage: React.FC = () => {
       location_code: '',
       user_group_id: '',
       infrastructure_type: InfrastructureType.FIXED_DLTC,
-      operational_status: OperationalStatus.ACTIVE,
+      operational_status: OperationalStatus.OPERATIONAL,
       location_scope: LocationScope.PROVINCIAL,
       address_line_1: '',
       address_line_2: '',
@@ -157,7 +157,7 @@ const CreateLocationPage: React.FC = () => {
         location_code: data.location_code,
         user_group_id: data.user_group_id,
         infrastructure_type: data.infrastructure_type,
-        operational_status: data.operational_status || OperationalStatus.ACTIVE,
+        operational_status: data.operational_status || OperationalStatus.OPERATIONAL,
         location_scope: data.location_scope || LocationScope.PROVINCIAL,
         address: {
           address_line_1: data.address_line_1,
@@ -308,9 +308,12 @@ const CreateLocationPage: React.FC = () => {
                   >
                     <MenuItem value={InfrastructureType.FIXED_DLTC}>Fixed DLTC</MenuItem>
                     <MenuItem value={InfrastructureType.MOBILE_DLTC}>Mobile DLTC</MenuItem>
-                    <MenuItem value={InfrastructureType.REGIONAL_AUTHORITY}>Regional Authority</MenuItem>
-                    <MenuItem value={InfrastructureType.PLAMARK}>Provincial Help Desk</MenuItem>
-                    <MenuItem value={InfrastructureType.NHELPDESK}>National Help Desk</MenuItem>
+                    <MenuItem value={InfrastructureType.PRINTING_CENTER}>Printing Center</MenuItem>
+                    <MenuItem value={InfrastructureType.REGISTERING_AUTHORITY}>Registering Authority</MenuItem>
+                    <MenuItem value={InfrastructureType.PROVINCIAL_OFFICE}>Provincial Office</MenuItem>
+                    <MenuItem value={InfrastructureType.NATIONAL_OFFICE}>National Office</MenuItem>
+                    <MenuItem value={InfrastructureType.VEHICLE_TESTING}>Vehicle Testing</MenuItem>
+                    <MenuItem value={InfrastructureType.HELP_DESK}>Help Desk</MenuItem>
                   </TextField>
                 )}
               />
@@ -329,10 +332,12 @@ const CreateLocationPage: React.FC = () => {
                     error={!!errors.operational_status}
                     helperText={errors.operational_status?.message}
                   >
-                    <MenuItem value={OperationalStatus.ACTIVE}>Active</MenuItem>
-                    <MenuItem value={OperationalStatus.INACTIVE}>Inactive</MenuItem>
+                    <MenuItem value={OperationalStatus.OPERATIONAL}>Operational</MenuItem>
                     <MenuItem value={OperationalStatus.MAINTENANCE}>Maintenance</MenuItem>
                     <MenuItem value={OperationalStatus.SUSPENDED}>Suspended</MenuItem>
+                    <MenuItem value={OperationalStatus.SETUP}>Setup</MenuItem>
+                    <MenuItem value={OperationalStatus.DECOMMISSIONED}>Decommissioned</MenuItem>
+                    <MenuItem value={OperationalStatus.INSPECTION}>Inspection</MenuItem>
                   </TextField>
                 )}
               />

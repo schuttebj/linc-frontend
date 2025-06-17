@@ -38,10 +38,13 @@ const PROVINCES = [
 
 const USER_GROUP_TYPES = [
   { value: UserGroupType.FIXED_DLTC, label: 'Fixed DLTC', code: 10 },
-  { value: UserGroupType.MOBILE_DLTC, label: 'Mobile DLTC', code: 20 },
-  { value: UserGroupType.REGIONAL_AUTHORITY, label: 'Regional Authority', code: 30 },
-  { value: UserGroupType.PLAMARK, label: 'Provincial Help Desk', code: 40 },
-  { value: UserGroupType.NHELPDESK, label: 'National Help Desk', code: 50 },
+  { value: UserGroupType.MOBILE_DLTC, label: 'Mobile DLTC', code: 11 },
+  { value: UserGroupType.PRINTING_CENTER, label: 'Printing Center', code: 12 },
+  { value: UserGroupType.REGISTERING_AUTHORITY, label: 'Registering Authority', code: 20 },
+  { value: UserGroupType.PROVINCIAL_HELP_DESK, label: 'Provincial Help Desk', code: 30 },
+  { value: UserGroupType.NATIONAL_HELP_DESK, label: 'National Help Desk', code: 31 },
+  { value: UserGroupType.VEHICLE_TESTING_STATION, label: 'Vehicle Testing Station', code: 40 },
+  { value: UserGroupType.ADMIN_OFFICE, label: 'Admin Office', code: 50 },
 ];
 
 // Validation functions
@@ -82,7 +85,7 @@ const CreateUserGroupPage: React.FC = () => {
       user_group_type: UserGroupType.FIXED_DLTC,
       infrastructure_type_code: 10,
       province_code: '',
-      registration_status: RegistrationStatus.ACTIVE,
+      registration_status: RegistrationStatus.REGISTERED,
       description: '',
       contact_person: '',
       phone_number: '',
@@ -141,12 +144,18 @@ const CreateUserGroupPage: React.FC = () => {
         baseName = `${province.name} DLTC`;
       } else if (type.value === UserGroupType.MOBILE_DLTC) {
         baseName = `${province.name} Mobile DLTC`;
-      } else if (type.value === UserGroupType.REGIONAL_AUTHORITY) {
-        baseName = `${province.name} Regional Authority`;
-      } else if (type.value === UserGroupType.PLAMARK) {
+      } else if (type.value === UserGroupType.REGISTERING_AUTHORITY) {
+        baseName = `${province.name} Registering Authority`;
+      } else if (type.value === UserGroupType.PROVINCIAL_HELP_DESK) {
         baseName = `${province.name} Help Desk`;
-      } else if (type.value === UserGroupType.NHELPDESK) {
+      } else if (type.value === UserGroupType.NATIONAL_HELP_DESK) {
         baseName = 'National Help Desk';
+      } else if (type.value === UserGroupType.PRINTING_CENTER) {
+        baseName = `${province.name} Printing Center`;
+      } else if (type.value === UserGroupType.VEHICLE_TESTING_STATION) {
+        baseName = `${province.name} Testing Station`;
+      } else if (type.value === UserGroupType.ADMIN_OFFICE) {
+        baseName = `${province.name} Admin Office`;
       }
 
       setValue('user_group_name', baseName);
@@ -169,7 +178,7 @@ const CreateUserGroupPage: React.FC = () => {
         user_group_type: data.user_group_type,
         infrastructure_type_code: data.infrastructure_type_code,
         province_code: data.province_code,
-        registration_status: data.registration_status || RegistrationStatus.ACTIVE,
+        registration_status: data.registration_status || RegistrationStatus.REGISTERED,
         description: data.description,
         contact_person: data.contact_person,
         phone_number: data.phone_number,
@@ -359,10 +368,14 @@ const CreateUserGroupPage: React.FC = () => {
                     error={!!errors.registration_status}
                     helperText={errors.registration_status?.message}
                   >
-                    <MenuItem value={RegistrationStatus.ACTIVE}>Active</MenuItem>
-                    <MenuItem value={RegistrationStatus.INACTIVE}>Inactive</MenuItem>
-                    <MenuItem value={RegistrationStatus.PENDING}>Pending</MenuItem>
+                    <MenuItem value={RegistrationStatus.REGISTERED}>Registered</MenuItem>
+                    <MenuItem value={RegistrationStatus.PENDING_REGISTRATION}>Pending Registration</MenuItem>
                     <MenuItem value={RegistrationStatus.SUSPENDED}>Suspended</MenuItem>
+                    <MenuItem value={RegistrationStatus.PENDING_RENEWAL}>Pending Renewal</MenuItem>
+                    <MenuItem value={RegistrationStatus.CANCELLED}>Cancelled</MenuItem>
+                    <MenuItem value={RegistrationStatus.PENDING_INSPECTION}>Pending Inspection</MenuItem>
+                    <MenuItem value={RegistrationStatus.INSPECTION_FAILED}>Inspection Failed</MenuItem>
+                    <MenuItem value={RegistrationStatus.DEREGISTERED}>Deregistered</MenuItem>
                   </TextField>
                 )}
               />

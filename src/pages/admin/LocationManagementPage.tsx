@@ -137,9 +137,9 @@ const LocationManagementPage: React.FC = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <StatsIcon color="info" />
                 <Box>
-                  <Typography variant="h6">
-                    {locations.filter((l: Location) => l.operational_status === 'active').length}
-                  </Typography>
+                                      <Typography variant="h6">
+                      {locations.filter((l: Location) => l.operational_status === 'operational').length}
+                    </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Active Locations
                   </Typography>
@@ -190,7 +190,7 @@ const LocationManagementPage: React.FC = () => {
                     <TableCell>
                       <Chip
                         label={userGroup.registration_status}
-                        color={userGroup.registration_status === 'active' ? 'success' : 'default'}
+                        color={userGroup.registration_status === '2' ? 'success' : 'default'}
                         size="small"
                       />
                     </TableCell>
@@ -254,7 +254,7 @@ const LocationManagementPage: React.FC = () => {
                     <TableCell>
                       <Chip
                         label={location.operational_status}
-                        color={location.operational_status === 'active' ? 'success' : 'default'}
+                        color={location.operational_status === 'operational' ? 'success' : 'default'}
                         size="small"
                       />
                     </TableCell>
