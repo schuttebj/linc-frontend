@@ -263,7 +263,7 @@ export const userLocationAssignmentService = {
   },
 
   // Get assignments for a user
-  getByUser: async (userId: string): Promise<UserLocationAssignment[]> => {
+  getByUser: async (_userId: string): Promise<UserLocationAssignment[]> => {
     // This endpoint needs to be added to backend if needed
     throw new Error('User location assignments by user not yet implemented - use staffAssignmentService.getByLocation() instead');
   },
@@ -287,13 +287,13 @@ export const userLocationAssignmentService = {
   },
 
   // Update assignment  
-  update: async (assignmentId: string, data: Partial<UserLocationAssignment>): Promise<UserLocationAssignment> => {
+  update: async (_assignmentId: string, _data: Partial<UserLocationAssignment>): Promise<UserLocationAssignment> => {
     // This would need the location ID - for now, throw an error directing to use new service
     throw new Error('Use staffAssignmentService.updateAssignment() instead - requires locationId');
   },
 
   // Delete assignment
-  delete: async (assignmentId: string): Promise<void> => {
+  delete: async (_assignmentId: string): Promise<void> => {
     // This would need the location ID - for now, throw an error directing to use new service  
     throw new Error('Use staffAssignmentService.removeAssignment() instead - requires locationId');
   }

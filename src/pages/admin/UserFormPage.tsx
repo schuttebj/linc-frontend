@@ -89,9 +89,9 @@ const userFormSchema = yup.object({
     .required('Confirm password is required'),
   
   // Work Assignment
-  userGroupCode: yup.string().required('User group is required'),
-  officeCode: yup.string().required('Office is required'),
-  userTypeCode: yup.string().required('User type is required'),
+  user_group_code: yup.string().required('User group is required'),
+  office_code: yup.string().required('Office is required'),
+  user_type_code: yup.string().required('User type is required'),
   department: yup.string(),
   jobTitle: yup.string(),
   employeeId: yup.string(),
@@ -152,14 +152,14 @@ const UserFormPage = () => {
     defaultValues: {
       countryCode: 'ZA',
       status: UserStatus.ACTIVE,
-      isActive: true,
+      is_active: true,
       authorityLevel: AuthorityLevel.OFFICE,
-      userTypeCode: UserType.STANDARD,
-      requirePasswordChange: true,
-      require2fa: false,
+      user_type_code: UserType.STANDARD,
+      require_password_change: true,
+      require_2fa: false,
       language: 'en',
       timezone: 'Africa/Johannesburg',
-      dateFormat: 'DD/MM/YYYY'
+      date_format: 'DD/MM/YYYY'
     }
   });
 
@@ -175,10 +175,10 @@ const UserFormPage = () => {
 
   // Load offices when user group changes
   useEffect(() => {
-    if (watchedFields.userGroupCode) {
-      loadOfficesByUserGroup(watchedFields.userGroupCode);
+    if (watchedFields.user_group_code) {
+      loadOfficesByUserGroup(watchedFields.user_group_code);
     }
-  }, [watchedFields.userGroupCode]);
+  }, [watchedFields.user_group_code]);
 
   const loadLookupData = async () => {
     try {
@@ -830,13 +830,13 @@ const UserFormPage = () => {
           {/* Security Options */}
           <Grid item xs={12} md={6}>
             <Controller
-              name="requirePasswordChange"
+              name="require_password_change"
               control={control}
               render={({ field }) => (
                 <FormControlLabel
                   control={
                     <Switch
-                      checked={field.value}
+                      checked={Boolean(field.value)}
                       onChange={field.onChange}
                     />
                   }
@@ -848,13 +848,13 @@ const UserFormPage = () => {
 
           <Grid item xs={12} md={6}>
             <Controller
-              name="require2fa"
+              name="require_2fa"
               control={control}
               render={({ field }) => (
                 <FormControlLabel
                   control={
                     <Switch
-                      checked={field.value}
+                      checked={Boolean(field.value)}
                       onChange={field.onChange}
                     />
                   }
@@ -914,18 +914,18 @@ const UserFormPage = () => {
               <Grid item xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">User Group</Typography>
                 <Typography variant="body1">
-                  {userGroups.find(ug => ug.user_group_code === watchedFields.userGroupCode)?.user_group_name || watchedFields.userGroupCode}
+                  {userGroups.find(ug => ug.user_group_code === watchedFields.user_group_code)?.user_group_name || watchedFields.user_group_code}
                 </Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Office</Typography>
                 <Typography variant="body1">
-                  {offices.find(o => o.officeCode === watchedFields.officeCode)?.name || watchedFields.officeCode}
+                  {offices.find(o => o.officeCode === watchedFields.office_code)?.name || watchedFields.office_code}
                 </Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">User Type</Typography>
-                <Typography variant="body1">{watchedFields.userTypeCode}</Typography>
+                <Typography variant="body1">{watchedFields.user_type_code}</Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Department</Typography>
@@ -958,7 +958,7 @@ const UserFormPage = () => {
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Active</Typography>
-                <Typography variant="body1">{watchedFields.isActive ? 'Yes' : 'No'}</Typography>
+                <Typography variant="body1">{watchedFields.is_active ? 'Yes' : 'No'}</Typography>
               </Grid>
             </Grid>
           </Grid>
@@ -970,8 +970,8 @@ const UserFormPage = () => {
           </Typography>
           <Typography variant="body2">
             • Validation rules V06001-V06005 have been checked
-            • User will {watchedFields.requirePasswordChange ? 'be required to' : 'not be required to'} change password on first login
-            • Two-factor authentication is {watchedFields.require2fa ? 'enabled' : 'disabled'}
+            • User will {watchedFields.require_password_change ? 'be required to' : 'not be required to'} change password on first login
+            • Two-factor authentication is {watchedFields.require_2fa ? 'enabled' : 'disabled'}
           </Typography>
         </Alert>
       </CardContent>
