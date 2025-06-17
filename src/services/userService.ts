@@ -351,7 +351,7 @@ class UserService {
    * Get offices for a specific user group
    * Note: This endpoint doesn't exist yet in the backend, so we'll return a placeholder
    */
-  async getOfficesByUserGroup(userGroupId: string, activeOnly: boolean = true): Promise<Office[]> {
+  async getOfficesByUserGroup(userGroupId: string): Promise<Office[]> {
     try {
       // For now, return a placeholder since the offices endpoint doesn't exist yet
       // This would be: `${this.baseURL}/api/v1/user-groups/${userGroupId}/offices`
