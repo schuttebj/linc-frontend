@@ -62,18 +62,7 @@ import {
   AssignmentStatus
 } from '../../types/location';
 
-// Province mapping for display
-const PROVINCES = {
-  'EC': 'Eastern Cape',
-  'FS': 'Free State',
-  'GP': 'Gauteng',
-  'KN': 'KwaZulu-Natal',
-  'LP': 'Limpopo',
-  'MP': 'Mpumalanga',
-  'NC': 'Northern Cape',
-  'NW': 'North West',
-  'WC': 'Western Cape'
-};
+
 
 // Status color mapping
 const ASSIGNMENT_STATUS_COLORS = {
@@ -429,14 +418,14 @@ const StaffManagementPage: React.FC = () => {
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                           <Avatar sx={{ width: 32, height: 32 }}>
-                            {assignment.user?.first_name?.[0]}{assignment.user?.last_name?.[0]}
+                            {assignment.user_full_name?.[0] || assignment.user_username?.[0] || 'U'}
                           </Avatar>
                           <Box>
                             <Typography variant="body2" fontWeight="medium">
-                              {assignment.user?.first_name} {assignment.user?.last_name}
+                              {assignment.user_full_name || assignment.user_username || 'Unknown User'}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              {assignment.user?.email}
+                              {assignment.user_email || '-'}
                             </Typography>
                           </Box>
                         </Box>
@@ -459,7 +448,7 @@ const StaffManagementPage: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={assignment.role}
+                          label={assignment.access_level || 'Standard'}
                           variant="outlined"
                           size="small"
                         />
@@ -480,7 +469,7 @@ const StaffManagementPage: React.FC = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        {assignment.start_date ? new Date(assignment.start_date).toLocaleDateString() : '-'}
+                        {assignment.effective_date ? new Date(assignment.effective_date).toLocaleDateString() : '-'}
                       </TableCell>
                       <TableCell align="right">
                         <Tooltip title="Edit">
