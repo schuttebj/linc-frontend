@@ -304,13 +304,13 @@ const UserFormPage = () => {
         permission_ids: [], // Will be populated based on userType
         
         // Security
-        require_password_change: data.requirePasswordChange,
-        require_2fa: data.require2fa,
+        require_password_change: data.require_password_change,
+        require_2fa: data.require_2fa,
         
         // System settings
         language: data.language,
         timezone: data.timezone,
-        date_format: data.dateFormat
+        date_format: data.date_format
       };
 
       if (isEditMode && userId) {
@@ -332,7 +332,7 @@ const UserFormPage = () => {
       case 0: // Basic Information
         return ['fullName', 'email', 'phoneNumber', 'idType', 'idNumber'];
       case 1: // Work Assignment  
-        return ['userGroupCode', 'officeCode', 'userTypeCode', 'countryCode', 'provinceCode'];
+        return ['user_group_code', 'office_code', 'user_type_code', 'countryCode', 'provinceCode'];
       case 2: // Security & Permissions
         return ['username', 'password', 'confirmPassword', 'status', 'authorityLevel'];
       default:
@@ -512,10 +512,10 @@ const UserFormPage = () => {
           {/* User Group */}
           <Grid item xs={12} md={6}>
             <Controller
-              name="userGroupCode"
+              name="user_group_code"
               control={control}
               render={({ field }) => (
-                <FormControl fullWidth error={!!errors.userGroupCode}>
+                <FormControl fullWidth error={!!errors.user_group_code}>
                   <InputLabel>User Group *</InputLabel>
                   <Select {...field} label="User Group *">
                     {userGroups.map((group) => (
@@ -524,7 +524,7 @@ const UserFormPage = () => {
                       </MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText>{errors.userGroupCode?.message || 'V06001: User Group must be active and valid'}</FormHelperText>
+                  <FormHelperText>{errors.user_group_code?.message || 'V06001: User Group must be active and valid'}</FormHelperText>
                 </FormControl>
               )}
             />
@@ -533,19 +533,19 @@ const UserFormPage = () => {
           {/* Office */}
           <Grid item xs={12} md={6}>
             <Controller
-              name="officeCode"
+              name="office_code"
               control={control}
               render={({ field }) => (
-                <FormControl fullWidth error={!!errors.officeCode}>
+                <FormControl fullWidth error={!!errors.office_code}>
                   <InputLabel>Office *</InputLabel>
-                  <Select {...field} label="Office *" disabled={!watchedFields.userGroupCode}>
+                  <Select {...field} label="Office *" disabled={!watchedFields.user_group_code}>
                     {offices.map((office) => (
                       <MenuItem key={office.id} value={office.officeCode}>
                         {office.name} ({office.officeCode})
                       </MenuItem>
                     ))}
                   </Select>
-                  <FormHelperText>{errors.officeCode?.message || 'V06002: Office must exist within selected User Group'}</FormHelperText>
+                  <FormHelperText>{errors.office_code?.message || 'V06002: Office must exist within selected User Group'}</FormHelperText>
                 </FormControl>
               )}
             />
@@ -554,10 +554,10 @@ const UserFormPage = () => {
           {/* User Type */}
           <Grid item xs={12} md={6}>
             <Controller
-              name="userTypeCode"
+              name="user_type_code"
               control={control}
               render={({ field }) => (
-                <FormControl fullWidth error={!!errors.userTypeCode}>
+                <FormControl fullWidth error={!!errors.user_type_code}>
                   <InputLabel>User Type *</InputLabel>
                   <Select {...field} label="User Type *">
                     <MenuItem value={UserType.STANDARD}>Standard User</MenuItem>
@@ -566,7 +566,7 @@ const UserFormPage = () => {
                     <MenuItem value={UserType.ADMIN}>Administrator</MenuItem>
                     <MenuItem value={UserType.SYSTEM}>System User</MenuItem>
                   </Select>
-                  <FormHelperText>{errors.userTypeCode?.message}</FormHelperText>
+                  <FormHelperText>{errors.user_type_code?.message}</FormHelperText>
                 </FormControl>
               )}
             />
@@ -599,7 +599,7 @@ const UserFormPage = () => {
           {/* Job Title */}
           <Grid item xs={12} md={6}>
             <Controller
-              name="jobTitle"
+              name="job_title"
               control={control}
               render={({ field }) => (
                 <TextField
@@ -614,7 +614,7 @@ const UserFormPage = () => {
           {/* Employee ID */}
           <Grid item xs={12} md={6}>
             <Controller
-              name="employeeId"
+              name="employee_id"
               control={control}
               render={({ field }) => (
                 <TextField
@@ -811,13 +811,13 @@ const UserFormPage = () => {
           {/* Active Status */}
           <Grid item xs={12}>
             <Controller
-              name="isActive"
+              name="is_active"
               control={control}
               render={({ field }) => (
                 <FormControlLabel
                   control={
                     <Switch
-                      checked={field.value}
+                      checked={Boolean(field.value)}
                       onChange={field.onChange}
                     />
                   }
