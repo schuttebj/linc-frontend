@@ -192,14 +192,29 @@ class UserService {
   // ========================================
 
   /**
-   * Search users by term
+   * Search users by term with enhanced filtering for staff assignment
    */
-  async searchUsers(searchTerm: string, limit: number = 50): Promise<User[]> {
+  async searchUsers(
+    searchTerm: string, 
+    limit: number = 50, 
+    options?: {
+      excludeAssignedToLocation?: string;
+      userType?: string;
+    }
+  ): Promise<User[]> {
     try {
       const params = new URLSearchParams({
         q: searchTerm,
         limit: limit.toString()
       });
+
+      // Add optional filters for staff assignment
+      if (options?.excludeAssignedToLocation) {
+        params.append('exclude_assigned', options.excludeAssignedToLocation);
+      }
+      if (options?.userType) {
+        params.append('user_type', options.userType);
+      }
 
       const response: AxiosResponse<User[]> = await axios.get(
         `${this.baseURL}${USER_ENDPOINTS.SEARCH}?${params.toString()}`,
@@ -314,6 +329,45 @@ class UserService {
     try {
       const response: AxiosResponse<{ message: string }> = await axios.delete(
         `${this.baseURL}${USER_ENDPOINTS.USERS}/sessions/${sessionId}`,
+        { headers: this.getAuthHeaders() }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // ========================================
+  // USER ASSIGNMENT OPERATIONS
+  // ========================================
+
+  /**
+   * Assign user to location from user management screen
+   */
+  async assignUserToLocation(userId: string, assignmentData: any): Promise<any> {
+    try {
+      const response: AxiosResponse<any> = await axios.post(
+        `${this.baseURL}${USER_ENDPOINTS.USERS}/${userId}/assignments`,
+        assignmentData,
+        { headers: this.getAuthHeaders() }
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Get user location assignments
+   */
+  async getUserAssignments(userId: string, activeOnly: boolean = true): Promise<any[]> {
+    try {
+      const params = new URLSearchParams({
+        active_only: activeOnly.toString()
+      });
+
+      const response: AxiosResponse<any[]> = await axios.get(
+        `${this.baseURL}${USER_ENDPOINTS.USERS}/${userId}/assignments?${params.toString()}`,
         { headers: this.getAuthHeaders() }
       );
       return response.data;

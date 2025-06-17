@@ -80,6 +80,8 @@ import {
   LocationStatistics,
   UserGroupStatistics
 } from '../../types/location';
+import { User } from '../../types/user';
+import UserSearchModal from '../../components/UserSearchModal';
 
 // Province mapping for display
 const PROVINCES = {
@@ -174,6 +176,8 @@ const LocationManagementPage: React.FC = () => {
   // Dialog states
   const [staffDialogOpen, setStaffDialogOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<UserLocationAssignment | null>(null);
+  const [userSearchOpen, setUserSearchOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   
   // Search and filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -357,7 +361,17 @@ const LocationManagementPage: React.FC = () => {
   const handleCloseStaffDialog = () => {
     setStaffDialogOpen(false);
     setEditingAssignment(null);
+    setSelectedUser(null);
     resetStaffForm();
+  };
+
+  const handleUserSelect = (user: User) => {
+    setSelectedUser(user);
+    // Update the form with the selected user ID
+    resetStaffForm({
+      ...staffControl.getValues(),
+      user_id: user.id
+    });
   };
 
   // Filter data
@@ -932,20 +946,58 @@ const LocationManagementPage: React.FC = () => {
               </Grid>
               
               <Grid item xs={12} md={6}>
-                <Controller
-                  name="user_id"
-                  control={staffControl}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
+                <Box>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Select User for Assignment
+                  </Typography>
+                  {selectedUser ? (
+                    <Box sx={{ 
+                      p: 2, 
+                      border: 1, 
+                      borderColor: 'divider', 
+                      borderRadius: 1,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <Box>
+                        <Typography variant="body1" fontWeight="medium">
+                          {selectedUser.personalDetails?.fullName || selectedUser.fullName || selectedUser.username}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {selectedUser.username} • {selectedUser.personalDetails?.email}
+                        </Typography>
+                        {selectedUser.userGroupCode && (
+                          <Typography variant="body2" color="text.secondary">
+                            User Group: {selectedUser.userGroupCode}
+                          </Typography>
+                        )}
+                      </Box>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => setUserSearchOpen(true)}
+                      >
+                        Change User
+                      </Button>
+                    </Box>
+                  ) : (
+                    <Button
+                      variant="outlined"
                       fullWidth
-                      label="User ID"
-                      placeholder="Enter user ID"
-                      error={!!staffErrors.user_id}
-                      helperText={staffErrors.user_id?.message}
-                    />
+                      startIcon={<SearchIcon />}
+                      onClick={() => setUserSearchOpen(true)}
+                      sx={{ py: 2 }}
+                    >
+                      Search and Select User
+                    </Button>
                   )}
-                />
+                  {staffErrors.user_id && (
+                    <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+                      {staffErrors.user_id.message}
+                    </Typography>
+                  )}
+                </Box>
               </Grid>
               
               <Grid item xs={12} md={6}>
@@ -1176,6 +1228,15 @@ const LocationManagementPage: React.FC = () => {
           <LocationCityIcon />
         </Fab>
       </Box>
+
+      {/* User Search Modal */}
+      <UserSearchModal
+        open={userSearchOpen}
+        onClose={() => setUserSearchOpen(false)}
+        onSelectUser={handleUserSelect}
+        excludeLocationId={selectedLocation?.id}
+        title="Search Users for Staff Assignment"
+      />
     </Box>
   );
 };
