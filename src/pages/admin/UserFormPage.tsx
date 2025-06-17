@@ -260,24 +260,57 @@ const UserFormPage = () => {
       setLoading(true);
       setError(null);
 
-      // Transform form data to API format
+      // Transform form data to API format (backend expects snake_case)
       const userData = {
-        ...data,
-        personalDetails: {
-          idType: data.idType,
-          idNumber: data.idNumber,
-          fullName: data.fullName,
+        // Core identification (snake_case for backend)
+        user_group_code: data.userGroupCode,
+        office_code: data.officeCode,
+        user_name: data.fullName, // Backend expects user_name (display name)
+        user_type_code: data.userTypeCode,
+        
+        // Authentication
+        username: data.username,
+        password: data.password,
+        
+        // Personal details (snake_case object name)
+        personal_details: {
+          id_type: data.idType,
+          id_number: data.idNumber,
+          full_name: data.fullName,
           email: data.email,
-          phoneNumber: data.phoneNumber,
-          alternativePhone: data.alternativePhone
+          phone_number: data.phoneNumber,
+          alternative_phone: data.alternativePhone
         },
-        geographicAssignment: {
-          countryCode: data.countryCode,
-          provinceCode: data.provinceCode,
+        
+        // Geographic assignment (snake_case object name)
+        geographic_assignment: {
+          country_code: data.countryCode,
+          province_code: data.provinceCode,
           region: data.region
         },
-        roleIds: [], // Will be populated based on userType
-        permissionIds: [] // Will be populated based on userType
+        
+        // Job details
+        employee_id: data.employeeId,
+        department: data.department,
+        job_title: data.jobTitle,
+        infrastructure_number: data.infrastructureNumber,
+        
+        // Status
+        status: data.status,
+        is_active: data.isActive,
+        
+        // Role assignments
+        role_ids: [], // Will be populated based on userType
+        permission_ids: [], // Will be populated based on userType
+        
+        // Security
+        require_password_change: data.requirePasswordChange,
+        require_2fa: data.require2fa,
+        
+        // System settings
+        language: data.language,
+        timezone: data.timezone,
+        date_format: data.dateFormat
       };
 
       if (isEditMode && userId) {
