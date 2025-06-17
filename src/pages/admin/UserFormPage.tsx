@@ -197,7 +197,7 @@ const UserFormPage = () => {
 
   const loadOfficesByUserGroup = async (userGroupCode: string) => {
     try {
-      const userGroup = userGroups.find(ug => ug.userGroupCode === userGroupCode);
+      const userGroup = userGroups.find(ug => ug.user_group_code === userGroupCode);
       if (userGroup) {
         const officesData = await userService.getOfficesByUserGroup(userGroup.id);
         setOffices(officesData);
@@ -881,7 +881,7 @@ const UserFormPage = () => {
               <Grid item xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">User Group</Typography>
                 <Typography variant="body1">
-                  {userGroups.find(ug => ug.userGroupCode === watchedFields.userGroupCode)?.name || watchedFields.userGroupCode}
+                  {userGroups.find(ug => ug.user_group_code === watchedFields.userGroupCode)?.user_group_name || watchedFields.userGroupCode}
                 </Typography>
               </Grid>
               <Grid item xs={6}>

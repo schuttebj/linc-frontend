@@ -386,8 +386,8 @@ const UserManagementPage = () => {
                         <Select {...field} label="User Group">
                           <MenuItem value="">All User Groups</MenuItem>
                           {userGroups.map((group) => (
-                            <MenuItem key={group.id} value={group.userGroupCode}>
-                              {group.name}
+                            <MenuItem key={group.id} value={group.user_group_code}>
+                              {group.user_group_name}
                             </MenuItem>
                           ))}
                         </Select>
