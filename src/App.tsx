@@ -16,6 +16,7 @@ import PersonManagementPage from './pages/persons/PersonManagementPage';
 import CountryConfigurationPage from './pages/admin/CountryConfigurationPage';
 import LocationManagementPage from './pages/admin/LocationManagementPage';
 import UserManagementPage from './pages/admin/UserManagementPage';
+import UserFormPage from './pages/admin/UserFormPage';
 import CreateUserGroupPage from './pages/admin/CreateUserGroupPage';
 import CreateLocationPage from './pages/admin/CreateLocationPage';
 
@@ -84,6 +85,22 @@ function App() {
                 element={
                   <ProtectedRoute requiredPermission="user_management_read">
                     <UserManagementPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="users/create" 
+                element={
+                  <ProtectedRoute requiredPermission="user_management_create">
+                    <UserFormPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="users/:userId/edit" 
+                element={
+                  <ProtectedRoute requiredPermission="user_management_update">
+                    <UserFormPage />
                   </ProtectedRoute>
                 } 
               />

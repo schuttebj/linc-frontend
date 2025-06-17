@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -90,6 +91,8 @@ interface FilterFormData {
 }
 
 const UserManagementPage = () => {
+  const navigate = useNavigate();
+  
   // State management
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
@@ -198,8 +201,7 @@ const UserManagementPage = () => {
   };
 
   const handleEditUser = (user: User) => {
-    // Navigate to edit page (will implement in next step)
-    console.log('Edit user:', user.id);
+    navigate(`/dashboard/admin/users/${user.id}/edit`);
   };
 
   const handleDeleteUser = async () => {
@@ -219,8 +221,7 @@ const UserManagementPage = () => {
   };
 
   const handleCreateUser = () => {
-    // Navigate to create page (will implement in next step)
-    console.log('Create new user');
+    navigate('/dashboard/admin/users/create');
   };
 
   const formatUserDisplayName = (user: User): string => {
