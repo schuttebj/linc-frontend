@@ -5,7 +5,7 @@
  */
 
 import axios, { AxiosResponse } from 'axios';
-import { API_BASE_URL } from '../config/api';
+import { API_BASE_URL, getAuthToken } from '../config/api';
 import {
   User,
   CreateUserRequest,
@@ -45,7 +45,7 @@ class UserService {
    * Get authorization headers for API requests
    */
   private getAuthHeaders() {
-    const token = localStorage.getItem('authToken');
+    const token = getAuthToken();
     return {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
