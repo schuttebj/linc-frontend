@@ -72,7 +72,6 @@ const CreateUserGroupPage: React.FC = () => {
   const {
     control,
     handleSubmit,
-    reset,
     watch,
     setValue,
     formState: { errors, isSubmitting }

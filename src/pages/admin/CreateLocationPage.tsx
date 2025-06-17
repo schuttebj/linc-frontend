@@ -71,7 +71,6 @@ const CreateLocationPage: React.FC = () => {
   const {
     control,
     handleSubmit,
-    reset,
     watch,
     setValue,
     formState: { errors, isSubmitting }
@@ -309,9 +308,9 @@ const CreateLocationPage: React.FC = () => {
                   >
                     <MenuItem value={InfrastructureType.FIXED_DLTC}>Fixed DLTC</MenuItem>
                     <MenuItem value={InfrastructureType.MOBILE_DLTC}>Mobile DLTC</MenuItem>
-                    <MenuItem value={InfrastructureType.TESTING_STATION}>Testing Station</MenuItem>
-                    <MenuItem value={InfrastructureType.PRINTING_FACILITY}>Printing Facility</MenuItem>
-                    <MenuItem value={InfrastructureType.ADMIN_OFFICE}>Administrative Office</MenuItem>
+                    <MenuItem value={InfrastructureType.REGIONAL_AUTHORITY}>Regional Authority</MenuItem>
+                    <MenuItem value={InfrastructureType.PLAMARK}>Provincial Help Desk</MenuItem>
+                    <MenuItem value={InfrastructureType.NHELPDESK}>National Help Desk</MenuItem>
                   </TextField>
                 )}
               />
@@ -333,7 +332,7 @@ const CreateLocationPage: React.FC = () => {
                     <MenuItem value={OperationalStatus.ACTIVE}>Active</MenuItem>
                     <MenuItem value={OperationalStatus.INACTIVE}>Inactive</MenuItem>
                     <MenuItem value={OperationalStatus.MAINTENANCE}>Maintenance</MenuItem>
-                    <MenuItem value={OperationalStatus.TEMPORARILY_CLOSED}>Temporarily Closed</MenuItem>
+                    <MenuItem value={OperationalStatus.SUSPENDED}>Suspended</MenuItem>
                   </TextField>
                 )}
               />
@@ -354,8 +353,6 @@ const CreateLocationPage: React.FC = () => {
                   >
                     <MenuItem value={LocationScope.NATIONAL}>National</MenuItem>
                     <MenuItem value={LocationScope.PROVINCIAL}>Provincial</MenuItem>
-                    <MenuItem value={LocationScope.REGIONAL}>Regional</MenuItem>
-                    <MenuItem value={LocationScope.LOCAL}>Local</MenuItem>
                   </TextField>
                 )}
               />
