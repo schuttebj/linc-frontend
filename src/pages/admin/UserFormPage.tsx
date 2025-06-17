@@ -48,7 +48,6 @@ import * as yup from 'yup';
 import { useAuth } from '../../contexts/AuthContext';
 import userService from '../../services/userService';
 import {
-  User,
   UserFormData,
   UserType,
   UserStatus,
@@ -110,7 +109,7 @@ const userFormSchema = yup.object({
 const UserFormPage = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const { user: currentUser } = useAuth();
+  const { } = useAuth();
   const isEditMode = Boolean(userId);
   
   // State management

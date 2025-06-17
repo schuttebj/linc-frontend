@@ -60,7 +60,6 @@ import {
   UserType,
   AuthorityLevel,
   UserGroup,
-  Office,
   Province
 } from '../../types/user';
 
@@ -106,20 +105,17 @@ const UserManagementPage = () => {
   // Lookup data
   const [userGroups, setUserGroups] = useState<UserGroup[]>([]);
   const [provinces, setProvinces] = useState<Province[]>([]);
-  const [departments, setDepartments] = useState<string[]>([]);
   
   // Filter state
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   
-  const { user: currentUser } = useAuth();
+  const { } = useAuth();
 
   // Form setup
   const {
     control,
     handleSubmit,
-    watch,
-    reset,
-    formState: { errors }
+    reset
   } = useForm<FilterFormData>({
     resolver: yupResolver(filterSchema),
     defaultValues: {
@@ -148,8 +144,7 @@ const UserManagementPage = () => {
       setUserGroups(userGroupsData);
       setProvinces(provincesData);
       
-      // Extract unique departments from user data (would be from API in real implementation)
-      setDepartments(['IT', 'Operations', 'Admin', 'Finance', 'Legal', 'Customer Service']);
+      // Departments would be loaded from API in real implementation
     } catch (err) {
       console.error('Error loading lookup data:', err);
     }
