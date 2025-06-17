@@ -136,9 +136,22 @@ const LocationManagementPage: React.FC = () => {
     formState: { errors: locErrors, isSubmitting: locSubmitting }
   } = useForm({
     defaultValues: {
+      location_name: '',
+      location_code: '',
+      user_group_id: '',
+      infrastructure_type: InfrastructureType.FIXED_DLTC,
       operational_status: OperationalStatus.ACTIVE,
       location_scope: LocationScope.PROVINCIAL,
-      infrastructure_type: InfrastructureType.FIXED_DLTC,
+      address_line_1: '',
+      address_line_2: '',
+      city: '',
+      province_code: '',
+      postal_code: '',
+      contact_person: '',
+      phone_number: '',
+      email_address: '',
+      max_users: undefined,
+      max_daily_capacity: undefined,
     }
   });
 
