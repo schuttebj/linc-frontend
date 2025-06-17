@@ -53,7 +53,10 @@ const navigationItems = [
     subItems: [
       { text: 'Countries', path: '/dashboard/admin/countries', icon: <Settings /> },
       { text: 'User Management', path: '/dashboard/admin/users', icon: <ManageAccounts /> },
-      { text: 'Location Management', path: '/dashboard/admin/locations', icon: <LocationCity /> },
+      { text: 'Location Dashboard', path: '/dashboard/admin/locations', icon: <LocationCity /> },
+      { text: 'User Groups', path: '/dashboard/admin/user-groups', icon: <AdminPanelSettings /> },
+      { text: 'Locations', path: '/dashboard/admin/locations-management', icon: <LocationCity /> },
+      { text: 'Staff Management', path: '/dashboard/admin/staff-management', icon: <ManageAccounts /> },
     ]
   },
 ];

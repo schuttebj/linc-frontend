@@ -19,6 +19,9 @@ import UserManagementPage from './pages/admin/UserManagementPage';
 import UserFormPage from './pages/admin/UserFormPage';
 import CreateUserGroupPage from './pages/admin/CreateUserGroupPage';
 import CreateLocationPage from './pages/admin/CreateLocationPage';
+import UserGroupsPage from './pages/admin/UserGroupsPage';
+import LocationsPage from './pages/admin/LocationsPage';
+import StaffManagementPage from './pages/admin/StaffManagementPage';
 
 function App() {
   return (
@@ -113,6 +116,30 @@ function App() {
                 } 
               />
               <Route 
+                path="user-groups" 
+                element={
+                  <ProtectedRoute requiredPermission="user_group_read">
+                    <UserGroupsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="locations-management" 
+                element={
+                  <ProtectedRoute requiredPermission="location_read">
+                    <LocationsPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="staff-management" 
+                element={
+                  <ProtectedRoute requiredPermission="assignment_read">
+                    <StaffManagementPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
                 path="locations/user-groups/create" 
                 element={
                   <ProtectedRoute requiredPermission="user_group_create">
@@ -121,7 +148,23 @@ function App() {
                 } 
               />
               <Route 
+                path="user-groups/create" 
+                element={
+                  <ProtectedRoute requiredPermission="user_group_create">
+                    <CreateUserGroupPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
                 path="locations/create" 
+                element={
+                  <ProtectedRoute requiredPermission="location_create">
+                    <CreateLocationPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="locations-management/create" 
                 element={
                   <ProtectedRoute requiredPermission="location_create">
                     <CreateLocationPage />
