@@ -1,4 +1,3 @@
-
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Box } from '@mui/material';
 
@@ -16,6 +15,8 @@ import PersonSearchPage from './pages/persons/PersonSearchPage';
 import PersonManagementPage from './pages/persons/PersonManagementPage';
 import CountryConfigurationPage from './pages/admin/CountryConfigurationPage';
 import LocationManagementPage from './pages/admin/LocationManagementPage';
+import CreateUserGroupPage from './pages/admin/CreateUserGroupPage';
+import CreateLocationPage from './pages/admin/CreateLocationPage';
 
 function App() {
   return (
@@ -82,6 +83,22 @@ function App() {
                 element={
                   <ProtectedRoute requiredPermission="user_group_read">
                     <LocationManagementPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="locations/user-groups/create" 
+                element={
+                  <ProtectedRoute requiredPermission="user_group_create">
+                    <CreateUserGroupPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="locations/create" 
+                element={
+                  <ProtectedRoute requiredPermission="location_create">
+                    <CreateLocationPage />
                   </ProtectedRoute>
                 } 
               />
