@@ -181,7 +181,7 @@ const LocationManagementPage: React.FC = () => {
                 <AssignmentIcon color="success" sx={{ fontSize: 40 }} />
                 <Box>
                   <Typography variant="h4" sx={{ fontWeight: 600 }}>
-                    {loading ? <CircularProgress size={24} /> : (locationStats?.total_assignments || 0)}
+                    {loading ? <CircularProgress size={24} /> : (locationStats?.active_count || 0)}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Staff Assignments
