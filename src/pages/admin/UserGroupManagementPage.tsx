@@ -105,7 +105,11 @@ const INFRASTRUCTURE_TYPES = {
 const STATUS_COLORS = {
   [RegistrationStatus.REGISTERED]: 'success',
   [RegistrationStatus.PENDING_REGISTRATION]: 'warning',
+  [RegistrationStatus.PENDING_RENEWAL]: 'warning',
+  [RegistrationStatus.PENDING_INSPECTION]: 'warning',
   [RegistrationStatus.CANCELLED]: 'default',
+  [RegistrationStatus.DEREGISTERED]: 'default',
+  [RegistrationStatus.INSPECTION_FAILED]: 'error',
   [RegistrationStatus.SUSPENDED]: 'error',
 } as const;
 
@@ -421,9 +425,12 @@ const UserGroupManagementPage: React.FC = () => {
                 <MenuItem value="">All Types</MenuItem>
                 <MenuItem value={UserGroupType.FIXED_DLTC}>Fixed DLTC</MenuItem>
                 <MenuItem value={UserGroupType.MOBILE_DLTC}>Mobile DLTC</MenuItem>
-                <MenuItem value={UserGroupType.REGIONAL_AUTHORITY}>Regional Authority</MenuItem>
-                <MenuItem value={UserGroupType.PLAMARK}>PLAMARK</MenuItem>
-                <MenuItem value={UserGroupType.NHELPDESK}>NHELPDESK</MenuItem>
+                <MenuItem value={UserGroupType.REGISTERING_AUTHORITY}>Registering Authority</MenuItem>
+                <MenuItem value={UserGroupType.PROVINCIAL_HELP_DESK}>Provincial Help Desk</MenuItem>
+                <MenuItem value={UserGroupType.NATIONAL_HELP_DESK}>National Help Desk</MenuItem>
+                <MenuItem value={UserGroupType.PRINTING_CENTER}>Printing Center</MenuItem>
+                <MenuItem value={UserGroupType.VEHICLE_TESTING_STATION}>Vehicle Testing Station</MenuItem>
+                <MenuItem value={UserGroupType.ADMIN_OFFICE}>Admin Office</MenuItem>
               </TextField>
             </Grid>
             <Grid item xs={12} md={2}>
@@ -436,9 +443,10 @@ const UserGroupManagementPage: React.FC = () => {
                 onChange={(e) => handleFilterChange('registration_status', e.target.value)}
               >
                 <MenuItem value="">All Statuses</MenuItem>
-                <MenuItem value={RegistrationStatus.ACTIVE}>Active</MenuItem>
-                <MenuItem value={RegistrationStatus.PENDING}>Pending</MenuItem>
-                <MenuItem value={RegistrationStatus.INACTIVE}>Inactive</MenuItem>
+                <MenuItem value={RegistrationStatus.REGISTERED}>Registered</MenuItem>
+                <MenuItem value={RegistrationStatus.PENDING_REGISTRATION}>Pending Registration</MenuItem>
+                <MenuItem value={RegistrationStatus.CANCELLED}>Cancelled</MenuItem>
+                <MenuItem value={RegistrationStatus.DEREGISTERED}>Deregistered</MenuItem>
                 <MenuItem value={RegistrationStatus.SUSPENDED}>Suspended</MenuItem>
               </TextField>
             </Grid>
@@ -622,9 +630,12 @@ const UserGroupManagementPage: React.FC = () => {
                     >
                       <MenuItem value={UserGroupType.FIXED_DLTC}>Fixed DLTC</MenuItem>
                       <MenuItem value={UserGroupType.MOBILE_DLTC}>Mobile DLTC</MenuItem>
-                      <MenuItem value={UserGroupType.REGIONAL_AUTHORITY}>Regional Authority</MenuItem>
-                      <MenuItem value={UserGroupType.PLAMARK}>PLAMARK</MenuItem>
-                      <MenuItem value={UserGroupType.NHELPDESK}>NHELPDESK</MenuItem>
+                      <MenuItem value={UserGroupType.REGISTERING_AUTHORITY}>Registering Authority</MenuItem>
+                      <MenuItem value={UserGroupType.PROVINCIAL_HELP_DESK}>Provincial Help Desk</MenuItem>
+                      <MenuItem value={UserGroupType.NATIONAL_HELP_DESK}>National Help Desk</MenuItem>
+                      <MenuItem value={UserGroupType.PRINTING_CENTER}>Printing Center</MenuItem>
+                      <MenuItem value={UserGroupType.VEHICLE_TESTING_STATION}>Vehicle Testing Station</MenuItem>
+                      <MenuItem value={UserGroupType.ADMIN_OFFICE}>Admin Office</MenuItem>
                     </TextField>
                   )}
                 />
@@ -688,9 +699,10 @@ const UserGroupManagementPage: React.FC = () => {
                       error={!!errors.registration_status}
                       helperText={errors.registration_status?.message}
                     >
-                      <MenuItem value={RegistrationStatus.PENDING}>Pending</MenuItem>
-                      <MenuItem value={RegistrationStatus.ACTIVE}>Active</MenuItem>
-                      <MenuItem value={RegistrationStatus.INACTIVE}>Inactive</MenuItem>
+                      <MenuItem value={RegistrationStatus.PENDING_REGISTRATION}>Pending Registration</MenuItem>
+                      <MenuItem value={RegistrationStatus.REGISTERED}>Registered</MenuItem>
+                      <MenuItem value={RegistrationStatus.CANCELLED}>Cancelled</MenuItem>
+                      <MenuItem value={RegistrationStatus.DEREGISTERED}>Deregistered</MenuItem>
                       <MenuItem value={RegistrationStatus.SUSPENDED}>Suspended</MenuItem>
                     </TextField>
                   )}
