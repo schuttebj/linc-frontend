@@ -15,6 +15,7 @@ import PersonSearchPage from './pages/persons/PersonSearchPage';
 import PersonManagementPage from './pages/persons/PersonManagementPage';
 import CountryConfigurationPage from './pages/admin/CountryConfigurationPage';
 import LocationManagementPage from './pages/admin/LocationManagementPage';
+import UserManagementPage from './pages/admin/UserManagementPage';
 import CreateUserGroupPage from './pages/admin/CreateUserGroupPage';
 import CreateLocationPage from './pages/admin/CreateLocationPage';
 
@@ -75,6 +76,14 @@ function App() {
                 element={
                   <ProtectedRoute requiredRole="admin">
                     <CountryConfigurationPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="users" 
+                element={
+                  <ProtectedRoute requiredPermission="user_management_read">
+                    <UserManagementPage />
                   </ProtectedRoute>
                 } 
               />

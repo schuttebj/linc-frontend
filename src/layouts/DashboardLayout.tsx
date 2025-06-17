@@ -28,7 +28,8 @@ import {
   AccountCircle,
   Logout,
   Settings,
-  LocationCity
+  LocationCity,
+  ManageAccounts
 } from '@mui/icons-material';
 import { useState } from 'react';
 import { Collapse, List as MuiList } from '@mui/material';
@@ -51,6 +52,7 @@ const navigationItems = [
     icon: <AdminPanelSettings />, 
     subItems: [
       { text: 'Countries', path: '/dashboard/admin/countries', icon: <Settings /> },
+      { text: 'User Management', path: '/dashboard/admin/users', icon: <ManageAccounts /> },
       { text: 'Location Management', path: '/dashboard/admin/locations', icon: <LocationCity /> },
     ]
   },
