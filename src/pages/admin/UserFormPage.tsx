@@ -486,8 +486,8 @@ const UserFormPage = () => {
                   <InputLabel>User Group *</InputLabel>
                   <Select {...field} label="User Group *">
                     {userGroups.map((group) => (
-                      <MenuItem key={group.id} value={group.userGroupCode}>
-                        {group.name} ({group.userGroupCode})
+                      <MenuItem key={group.id} value={group.user_group_code}>
+                        {group.user_group_name} ({group.user_group_code})
                       </MenuItem>
                     ))}
                   </Select>

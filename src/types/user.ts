@@ -332,11 +332,22 @@ export interface UserFormData extends Omit<CreateUserRequest, 'personalDetails' 
 // Lookup data for dropdowns
 export interface UserGroup {
   id: string;
-  userGroupCode: string;
-  name: string;
-  description?: string;
-  isActive: boolean;
-  provinceCode: string;
+  user_group_code: string;
+  user_group_name: string;
+  user_group_type: string;
+  province_code: string;
+  is_active: boolean;
+  registration_status: string;
+  contact_person?: string;
+  phone_number?: string;
+  email?: string;
+  operational_notes?: string;
+  service_area_description?: string;
+  created_at: string;
+  updated_at: string;
+  authority_level: string;
+  is_dltc: boolean;
+  can_access_all_provinces: boolean;
 }
 
 export interface Office {
