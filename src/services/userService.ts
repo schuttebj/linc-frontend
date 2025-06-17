@@ -13,7 +13,7 @@ import {
   UserListResponse,
   UserListFilter,
   UserStatistics,
-  UserValidationResult,
+
   UserSession,
   CreateUserSessionRequest,
   UserGroup,

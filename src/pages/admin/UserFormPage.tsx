@@ -42,7 +42,7 @@ import {
   ArrowBack as ArrowBackIcon,
   Check as CheckIcon
 } from '@mui/icons-material';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useAuth } from '../../contexts/AuthContext';
@@ -121,13 +121,13 @@ const UserFormPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   // Validation states
-  const [usernameValidation, setUsernameValidation] = useState<{
+  const [usernameValidation] = useState<{
     checking: boolean;
     valid: boolean;
     message: string;
   }>({ checking: false, valid: false, message: '' });
   
-  const [emailValidation, setEmailValidation] = useState<{
+  const [emailValidation] = useState<{
     checking: boolean;
     valid: boolean;
     message: string;
@@ -256,7 +256,7 @@ const UserFormPage = () => {
     setCurrentStep(prev => Math.max(prev - 1, 0));
   };
 
-  const handleFormSubmit = async (data: UserFormData) => {
+  const handleFormSubmit: SubmitHandler<UserFormData> = async (data: UserFormData) => {
     try {
       setLoading(true);
       setError(null);

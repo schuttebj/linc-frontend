@@ -322,6 +322,9 @@ export interface UserFormData extends Omit<CreateUserRequest, 'personalDetails' 
   provinceCode: string;
   region?: string;
   
+  // Authority level (from User interface)
+  authorityLevel: AuthorityLevel;
+  
   // Additional form fields
   confirmPassword: string;
 }
