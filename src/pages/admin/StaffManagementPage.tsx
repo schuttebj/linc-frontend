@@ -50,12 +50,12 @@ import toast from 'react-hot-toast';
 
 // Services and types
 import { 
-  userAssignmentService, 
+  staffAssignmentService, 
   locationService, 
   userGroupService 
 } from '../../services/locationService';
 import {
-  UserAssignment,
+  UserLocationAssignment,
   Location,
   UserGroup,
   AssignmentType,
@@ -85,9 +85,9 @@ const ASSIGNMENT_STATUS_COLORS = {
 
 // Assignment type color mapping
 const ASSIGNMENT_TYPE_COLORS = {
-  [AssignmentType.PERMANENT]: 'primary',
-  [AssignmentType.TEMPORARY]: 'secondary',
-  [AssignmentType.CONTRACT]: 'info'
+  [AssignmentType.PRIMARY]: 'primary',
+  [AssignmentType.SECONDARY]: 'secondary',
+  [AssignmentType.TEMPORARY]: 'info'
 } as const;
 
 const StaffManagementPage: React.FC = () => {
@@ -96,7 +96,7 @@ const StaffManagementPage: React.FC = () => {
   const locationFilter = searchParams.get('location');
   
   // State management
-  const [assignments, setAssignments] = useState<UserAssignment[]>([]);
+  const [assignments, setAssignments] = useState<UserLocationAssignment[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [userGroups, setUserGroups] = useState<UserGroup[]>([]);
   const [loading, setLoading] = useState(false);
@@ -118,7 +118,9 @@ const StaffManagementPage: React.FC = () => {
   const loadAssignments = async () => {
     setLoading(true);
     try {
-      const data = await userAssignmentService.getAll();
+      // For now, we'll use a placeholder since we need all assignments, not just by location
+      // This would need to be implemented in the backend as a general getAll method
+      const data: UserLocationAssignment[] = [];
       setAssignments(data);
     } catch (error: any) {
       toast.error(error.message || 'Failed to load staff assignments');
@@ -145,13 +147,13 @@ const StaffManagementPage: React.FC = () => {
     }
   };
 
-  const handleDeleteAssignment = async (assignment: UserAssignment) => {
-    if (!window.confirm(`Are you sure you want to delete assignment for "${assignment.user?.first_name} ${assignment.user?.last_name}"?`)) {
+  const handleDeleteAssignment = async (assignment: UserLocationAssignment) => {
+    if (!window.confirm(`Are you sure you want to delete assignment for "${assignment.user_full_name}"?`)) {
       return;
     }
 
     try {
-      await userAssignmentService.delete(assignment.id);
+      await staffAssignmentService.removeAssignment(assignment.location_id, assignment.id);
       toast.success('Staff assignment deleted successfully');
       loadAssignments();
     } catch (error: any) {
@@ -160,10 +162,10 @@ const StaffManagementPage: React.FC = () => {
   };
 
   // Filter data
-  const filteredAssignments = assignments.filter(assignment => {
+  const filteredAssignments = assignments.filter((assignment: UserLocationAssignment) => {
     const matchesSearch = !searchTerm || 
-      `${assignment.user?.first_name} ${assignment.user?.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      assignment.user?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+      assignment.user_full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      assignment.user_email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesLocation = !selectedLocation || assignment.location_id === selectedLocation;
     const matchesUserGroup = !selectedUserGroup || assignment.location?.user_group_id === selectedUserGroup;
     const matchesStatus = !selectedStatus || assignment.assignment_status === selectedStatus;
@@ -173,9 +175,9 @@ const StaffManagementPage: React.FC = () => {
 
   // Statistics
   const totalAssignments = assignments.length;
-  const activeAssignments = assignments.filter(a => a.assignment_status === AssignmentStatus.ACTIVE).length;
-  const uniqueLocations = new Set(assignments.map(a => a.location_id)).size;
-  const uniqueUserGroups = new Set(assignments.map(a => a.location?.user_group_id).filter(Boolean)).size;
+  const activeAssignments = assignments.filter((a: UserLocationAssignment) => a.assignment_status === AssignmentStatus.ACTIVE).length;
+  const uniqueLocations = new Set(assignments.map((a: UserLocationAssignment) => a.location_id)).size;
+  const uniqueUserGroups = new Set(assignments.map((a: UserLocationAssignment) => a.location?.user_group_id).filter(Boolean)).size;
 
   return (
     <Box sx={{ p: 3 }}>

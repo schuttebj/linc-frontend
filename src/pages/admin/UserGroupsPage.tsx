@@ -134,7 +134,7 @@ const UserGroupsPage: React.FC = () => {
   };
 
   // Filter data
-  const filteredUserGroups = userGroups.filter(ug => {
+  const filteredUserGroups = userGroups.filter((ug: UserGroup) => {
     const matchesSearch = !searchTerm || 
       ug.user_group_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ug.user_group_code.toLowerCase().includes(searchTerm.toLowerCase());
@@ -201,7 +201,7 @@ const UserGroupsPage: React.FC = () => {
                 <BusinessIcon color="success" />
                 <Box>
                   <Typography variant="h6">
-                    {statistics?.active_count || userGroups.filter(ug => ug.registration_status === 'REGISTERED').length}
+                    {statistics?.active_count || userGroups.filter((ug: UserGroup) => ug.registration_status === RegistrationStatus.REGISTERED).length}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Active Groups
