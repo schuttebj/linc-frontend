@@ -122,8 +122,16 @@ const LocationManagementPage: React.FC = () => {
     formState: { errors: ugErrors, isSubmitting: ugSubmitting }
   } = useForm({
     defaultValues: {
-      registration_status: RegistrationStatus.ACTIVE,
+      user_group_code: '',
+      user_group_name: '',
+      user_group_type: UserGroupType.FIXED_DLTC,
       infrastructure_type_code: 10,
+      province_code: '',
+      registration_status: RegistrationStatus.ACTIVE,
+      description: '',
+      contact_person: '',
+      phone_number: '',
+      email_address: '',
     }
   });
 
