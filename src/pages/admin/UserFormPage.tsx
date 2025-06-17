@@ -263,10 +263,10 @@ const UserFormPage = () => {
       // Transform form data to API format (backend expects snake_case)
       const userData = {
         // Core identification (snake_case for backend)
-        user_group_code: data.userGroupCode,
-        office_code: data.officeCode,
+        user_group_code: data.user_group_code,
+        office_code: data.office_code,
         user_name: data.fullName, // Backend expects user_name (display name)
-        user_type_code: data.userTypeCode,
+        user_type_code: data.user_type_code,
         
         // Authentication
         username: data.username,
@@ -290,14 +290,14 @@ const UserFormPage = () => {
         },
         
         // Job details
-        employee_id: data.employeeId,
+        employee_id: data.employee_id,
         department: data.department,
-        job_title: data.jobTitle,
-        infrastructure_number: data.infrastructureNumber,
+        job_title: data.job_title,
+        infrastructure_number: data.infrastructure_number,
         
         // Status
         status: data.status,
-        is_active: data.isActive,
+        is_active: data.is_active,
         
         // Role assignments
         role_ids: [], // Will be populated based on userType

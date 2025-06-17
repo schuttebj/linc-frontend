@@ -35,13 +35,9 @@ import {
   Alert,
   Tabs,
   Tab,
-  Stepper,
-  Step,
-  StepLabel,
   InputAdornment,
   FormControlLabel,
   Checkbox,
-  Autocomplete,
   Fab
 } from '@mui/material';
 import {
@@ -56,7 +52,6 @@ import {
   PersonAdd as PersonAddIcon,
   Search as SearchIcon,
   Clear as ClearIcon,
-  Visibility as VisibilityIcon,
   Group as GroupIcon,
   Assignment as AssignmentIcon,
   LocationCity as LocationCityIcon
@@ -77,7 +72,7 @@ import {
   Location,
   UserLocationAssignment,
   StaffAssignmentCreate,
-  UserGroupType,
+
   RegistrationStatus,
   OperationalStatus,
   AssignmentType,
@@ -248,7 +243,7 @@ const LocationManagementPage: React.FC = () => {
   };
 
   // Event handlers
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 
