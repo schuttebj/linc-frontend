@@ -19,7 +19,7 @@ import {
   InputLabel,
   Avatar
 } from '@mui/material';
-import { Search, Person, Work, Email, Phone } from '@mui/icons-material';
+import { Search, Person, Work, Email } from '@mui/icons-material';
 import { User } from '../types/user';
 import { userService } from '../services/userService';
 
@@ -231,7 +231,7 @@ const UserSearchModal: React.FC<UserSearchModalProps> = ({
                       primary={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Typography variant="subtitle1" component="span">
-                            {user.personalDetails?.fullName || user.fullName || user.username}
+                            {user.personalDetails?.fullName || user.username}
                           </Typography>
                           <Chip
                             label={user.status}

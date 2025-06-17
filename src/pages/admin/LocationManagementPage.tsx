@@ -369,8 +369,20 @@ const LocationManagementPage: React.FC = () => {
     setSelectedUser(user);
     // Update the form with the selected user ID
     resetStaffForm({
-      ...staffControl.getValues(),
-      user_id: user.id
+      user_id: user.id,
+      assignment_type: AssignmentType.PRIMARY,
+      assignment_status: AssignmentStatus.ACTIVE,
+      effective_date: new Date().toISOString().split('T')[0],
+      access_level: 'standard',
+      can_manage_location: false,
+      can_assign_others: false,
+      can_view_reports: true,
+      can_manage_resources: false,
+      work_schedule: '',
+      responsibilities: '',
+      assignment_reason: '',
+      notes: '',
+      is_active: true
     });
   };
 
@@ -961,9 +973,9 @@ const LocationManagementPage: React.FC = () => {
                       alignItems: 'center'
                     }}>
                       <Box>
-                        <Typography variant="body1" fontWeight="medium">
-                          {selectedUser.personalDetails?.fullName || selectedUser.fullName || selectedUser.username}
-                        </Typography>
+                                                 <Typography variant="body1" fontWeight="medium">
+                           {selectedUser.personalDetails?.fullName || selectedUser.username}
+                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           {selectedUser.username} • {selectedUser.personalDetails?.email}
                         </Typography>
