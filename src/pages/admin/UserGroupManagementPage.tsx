@@ -103,9 +103,9 @@ const INFRASTRUCTURE_TYPES = {
 
 // Status color mapping
 const STATUS_COLORS = {
-  [RegistrationStatus.ACTIVE]: 'success',
-  [RegistrationStatus.PENDING]: 'warning',
-  [RegistrationStatus.INACTIVE]: 'default',
+  [RegistrationStatus.REGISTERED]: 'success',
+  [RegistrationStatus.PENDING_REGISTRATION]: 'warning',
+  [RegistrationStatus.CANCELLED]: 'default',
   [RegistrationStatus.SUSPENDED]: 'error',
 } as const;
 
@@ -136,7 +136,7 @@ const UserGroupManagementPage: React.FC = () => {
       user_group_type: UserGroupType.FIXED_DLTC,
       infrastructure_type_code: 10,
       province_code: '',
-      registration_status: RegistrationStatus.PENDING,
+      registration_status: RegistrationStatus.PENDING_REGISTRATION,
       description: '',
       contact_person: '',
       phone_number: '',
@@ -156,9 +156,12 @@ const UserGroupManagementPage: React.FC = () => {
     const typeMapping = {
       [UserGroupType.FIXED_DLTC]: 10,
       [UserGroupType.MOBILE_DLTC]: 11,
-      [UserGroupType.REGIONAL_AUTHORITY]: 20,
-      [UserGroupType.PLAMARK]: 30,
-      [UserGroupType.NHELPDESK]: 40,
+      [UserGroupType.PRINTING_CENTER]: 12,
+      [UserGroupType.REGISTERING_AUTHORITY]: 20,
+      [UserGroupType.PROVINCIAL_HELP_DESK]: 30,
+      [UserGroupType.NATIONAL_HELP_DESK]: 31,
+      [UserGroupType.VEHICLE_TESTING_STATION]: 40,
+      [UserGroupType.ADMIN_OFFICE]: 50,
     };
     setValue('infrastructure_type_code', typeMapping[watchedUserGroupType]);
   }, [watchedUserGroupType, setValue]);
