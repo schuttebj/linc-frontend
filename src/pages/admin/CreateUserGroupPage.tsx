@@ -13,6 +13,9 @@ import {
   Divider,
   Breadcrumbs,
   Link,
+  FormControl,
+  InputLabel,
+  Select,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -48,13 +51,6 @@ const USER_GROUP_TYPES = [
 ];
 
 // Validation functions
-const validateUserGroupCode = (value: string, provinceCode?: string) => {
-  if (!value) return 'User group code is required';
-  if (!/^[A-Z0-9]{4}$/.test(value)) return 'Code must be 4 alphanumeric characters';
-  if (provinceCode && !value.startsWith(provinceCode)) return `Code must start with ${provinceCode}`;
-  return true;
-};
-
 const validatePhoneNumber = (value: string) => {
   if (!value) return true; // Optional field
   if (!/^(\+27|0)[0-9]{9}$/.test(value)) return 'Please enter a valid South African phone number';
@@ -82,6 +78,7 @@ const CreateUserGroupPage: React.FC = () => {
     defaultValues: {
       user_group_code: '',
       user_group_name: '',
+      additional_name: '', // New field for additional naming
       user_group_type: UserGroupType.FIXED_DLTC,
       infrastructure_type_code: 10,
       province_code: '',
@@ -96,6 +93,7 @@ const CreateUserGroupPage: React.FC = () => {
   // Watch form values for auto-generation
   const provinceCode = watch('province_code');
   const userGroupType = watch('user_group_type');
+  const additionalName = watch('additional_name');
 
   useEffect(() => {
     loadUserGroups();
@@ -131,36 +129,50 @@ const CreateUserGroupPage: React.FC = () => {
     setValue('user_group_code', newCode);
   }, [provinceCode, userGroupType, userGroups, setValue]);
 
-  // Auto-generate user group name
-  const generateUserGroupName = useCallback(() => {
-    if (!provinceCode || !userGroupType) return;
+  // Auto-generate base user group name
+  const generateBaseUserGroupName = useCallback(() => {
+    if (!provinceCode || !userGroupType) return '';
 
     const province = PROVINCES.find(p => p.code === provinceCode);
     const type = USER_GROUP_TYPES.find(t => t.value === userGroupType);
     
     if (province && type) {
-      let baseName = '';
       if (type.value === UserGroupType.FIXED_DLTC) {
-        baseName = `${province.name} DLTC`;
+        return `${province.name} DLTC`;
       } else if (type.value === UserGroupType.MOBILE_DLTC) {
-        baseName = `${province.name} Mobile DLTC`;
+        return `${province.name} Mobile DLTC`;
       } else if (type.value === UserGroupType.REGISTERING_AUTHORITY) {
-        baseName = `${province.name} Registering Authority`;
+        return `${province.name} Registering Authority`;
       } else if (type.value === UserGroupType.PROVINCIAL_HELP_DESK) {
-        baseName = `${province.name} Help Desk`;
+        return `${province.name} Help Desk`;
       } else if (type.value === UserGroupType.NATIONAL_HELP_DESK) {
-        baseName = 'National Help Desk';
+        return 'National Help Desk';
       } else if (type.value === UserGroupType.PRINTING_CENTER) {
-        baseName = `${province.name} Printing Center`;
+        return `${province.name} Printing Center`;
       } else if (type.value === UserGroupType.VEHICLE_TESTING_STATION) {
-        baseName = `${province.name} Testing Station`;
+        return `${province.name} Testing Station`;
       } else if (type.value === UserGroupType.ADMIN_OFFICE) {
-        baseName = `${province.name} Admin Office`;
+        return `${province.name} Admin Office`;
       }
-
-      setValue('user_group_name', baseName);
     }
-  }, [provinceCode, userGroupType, setValue]);
+    return '';
+  }, [provinceCode, userGroupType]);
+
+  // Update full name when base name or additional name changes
+  useEffect(() => {
+    const baseName = generateBaseUserGroupName();
+    if (baseName) {
+      const fullName = additionalName ? `${baseName} ${additionalName}` : baseName;
+      setValue('user_group_name', fullName);
+    }
+  }, [provinceCode, userGroupType, additionalName, generateBaseUserGroupName, setValue]);
+
+  // Auto-generate code when province or type changes
+  useEffect(() => {
+    if (provinceCode && userGroupType) {
+      generateUserGroupCode();
+    }
+  }, [provinceCode, userGroupType, generateUserGroupCode]);
 
   // Auto-fill infrastructure type code when user group type changes
   useEffect(() => {
@@ -187,7 +199,7 @@ const CreateUserGroupPage: React.FC = () => {
 
       await userGroupService.create(createData);
       toast.success('User group created successfully');
-      navigate('/dashboard/admin/locations');
+      navigate('/dashboard/admin/user-groups');
     } catch (error: any) {
       console.error('Error creating user group:', error);
       toast.error(error.response?.data?.detail || error.message || 'Failed to create user group');
@@ -202,16 +214,16 @@ const CreateUserGroupPage: React.FC = () => {
           <Link 
             color="inherit" 
             href="#" 
-            onClick={() => navigate('/dashboard/admin/locations')}
+            onClick={() => navigate('/dashboard/admin/user-groups')}
             sx={{ cursor: 'pointer' }}
           >
-            Location Management
+            User Groups
           </Link>
           <Typography color="text.primary">Create User Group</Typography>
         </Breadcrumbs>
         
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton onClick={() => navigate('/dashboard/admin/locations')}>
+          <IconButton onClick={() => navigate('/dashboard/admin/user-groups')}>
             <ArrowBackIcon />
           </IconButton>
           <Typography variant="h4" component="h1">
@@ -223,95 +235,112 @@ const CreateUserGroupPage: React.FC = () => {
       {/* Form */}
       <Paper sx={{ p: 3 }}>
         <form onSubmit={handleSubmit(handleCreateUserGroup)}>
-          <Grid container spacing={3}>
-            {/* Basic Information */}
-            <Grid item xs={12}>
-              <Typography variant="h6" sx={{ mb: 2 }}>
-                Basic Information
-              </Typography>
-              <Divider sx={{ mb: 3 }} />
-            </Grid>
+          {/* Basic Information Section */}
+          <Box sx={{ mb: 4, p: 3, border: '1px solid #e0e0e0', borderRadius: 2, backgroundColor: '#fafafa' }}>
+            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
+              Basic Information
+            </Typography>
+            
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name="province_code"
+                  control={control}
+                  rules={{ required: 'Province is required' }}
+                  render={({ field }) => (
+                    <FormControl fullWidth>
+                      <InputLabel>Province *</InputLabel>
+                      <Select 
+                        {...field} 
+                        label="Province *" 
+                        sx={{ backgroundColor: 'white' }}
+                        error={!!errors.province_code}
+                      >
+                        {PROVINCES.map((province) => (
+                          <MenuItem key={province.code} value={province.code}>
+                            {province.name} ({province.code})
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      {errors.province_code && (
+                        <Typography variant="caption" color="error" sx={{ mt: 1, ml: 2 }}>
+                          {errors.province_code.message}
+                        </Typography>
+                      )}
+                    </FormControl>
+                  )}
+                />
+              </Grid>
 
-            <Grid item xs={12} md={6}>
-              <Controller
-                name="province_code"
-                control={control}
-                rules={{ required: 'Province is required' }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    select
-                    fullWidth
-                    label="Province"
-                    error={!!errors.province_code}
-                    helperText={errors.province_code?.message}
-                  >
-                    {PROVINCES.map((province) => (
-                      <MenuItem key={province.code} value={province.code}>
-                        {province.name} ({province.code})
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                )}
-              />
-            </Grid>
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name="user_group_type"
+                  control={control}
+                  rules={{ required: 'User group type is required' }}
+                  render={({ field }) => (
+                    <FormControl fullWidth>
+                      <InputLabel>User Group Type *</InputLabel>
+                      <Select 
+                        {...field} 
+                        label="User Group Type *" 
+                        sx={{ backgroundColor: 'white' }}
+                        error={!!errors.user_group_type}
+                      >
+                        {USER_GROUP_TYPES.map((type) => (
+                          <MenuItem key={type.value} value={type.value}>
+                            {type.label}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      {errors.user_group_type && (
+                        <Typography variant="caption" color="error" sx={{ mt: 1, ml: 2 }}>
+                          {errors.user_group_type.message}
+                        </Typography>
+                      )}
+                    </FormControl>
+                  )}
+                />
+              </Grid>
 
-            <Grid item xs={12} md={6}>
-              <Controller
-                name="user_group_type"
-                control={control}
-                rules={{ required: 'User group type is required' }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    select
-                    fullWidth
-                    label="User Group Type"
-                    error={!!errors.user_group_type}
-                    helperText={errors.user_group_type?.message}
-                  >
-                    {USER_GROUP_TYPES.map((type) => (
-                      <MenuItem key={type.value} value={type.value}>
-                        {type.label}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                )}
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+              <Grid item xs={12} md={6}>
                 <Controller
                   name="user_group_code"
                   control={control}
-                  rules={{ 
-                    required: 'User group code is required',
-                    validate: (value) => validateUserGroupCode(value, provinceCode)
-                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       fullWidth
-                      label="User Group Code"
-                      placeholder="e.g., WC01"
+                      label="User Group Code (Auto-Generated)"
                       error={!!errors.user_group_code}
-                      helperText={errors.user_group_code?.message || 'Format: 2 letters + 2 numbers (e.g., WC01)'}
-                      inputProps={{ maxLength: 4, style: { textTransform: 'uppercase' } }}
-                      onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                      helperText={errors.user_group_code?.message || 'Auto-generated based on province and type'}
+                      inputProps={{ style: { textTransform: 'uppercase' } }}
+                      sx={{ backgroundColor: 'white' }}
+                      InputProps={{ readOnly: true }}
                     />
                   )}
                 />
-                <Tooltip title="Auto-generate code">
-                  <IconButton onClick={generateUserGroupCode} disabled={!provinceCode || !userGroupType}>
-                    <MagicWandIcon />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            </Grid>
+              </Grid>
 
-            <Grid item xs={12} md={6}>
-              <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name="additional_name"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      label="Additional Name (Optional)"
+                      placeholder="e.g., Main Branch, City Center"
+                      error={!!errors.additional_name}
+                      helperText="Optional additional identifier for the user group"
+                      inputProps={{ maxLength: 50 }}
+                      sx={{ backgroundColor: 'white' }}
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
                 <Controller
                   name="user_group_name"
                   control={control}
@@ -320,171 +349,161 @@ const CreateUserGroupPage: React.FC = () => {
                     <TextField
                       {...field}
                       fullWidth
-                      label="User Group Name"
-                      placeholder="e.g., Western Cape DLTC"
+                      label="Full User Group Name (Auto-Generated)"
                       error={!!errors.user_group_name}
-                      helperText={errors.user_group_name?.message}
-                      inputProps={{ maxLength: 100 }}
+                      helperText={errors.user_group_name?.message || 'Auto-generated from province, type, and additional name'}
+                      inputProps={{ maxLength: 150 }}
+                      sx={{ backgroundColor: 'white' }}
+                      InputProps={{ readOnly: true }}
                     />
                   )}
                 />
-                <Tooltip title="Auto-generate name">
-                  <IconButton onClick={generateUserGroupName} disabled={!provinceCode || !userGroupType}>
-                    <MagicWandIcon />
-                  </IconButton>
-                </Tooltip>
-              </Box>
-            </Grid>
+              </Grid>
 
-            <Grid item xs={12} md={6}>
-              <Controller
-                name="infrastructure_type_code"
-                control={control}
-                rules={{ required: 'Infrastructure type code is required' }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    type="number"
-                    fullWidth
-                    label="Infrastructure Type Code"
-                    error={!!errors.infrastructure_type_code}
-                    helperText={errors.infrastructure_type_code?.message || 'Auto-filled based on user group type'}
-                    InputProps={{ readOnly: true }}
-                  />
-                )}
-              />
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name="registration_status"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControl fullWidth>
+                      <InputLabel>Registration Status</InputLabel>
+                      <Select 
+                        {...field} 
+                        label="Registration Status" 
+                        sx={{ backgroundColor: 'white' }}
+                      >
+                        <MenuItem value={RegistrationStatus.REGISTERED}>Registered</MenuItem>
+                        <MenuItem value={RegistrationStatus.PENDING_REGISTRATION}>Pending Registration</MenuItem>
+                        <MenuItem value={RegistrationStatus.SUSPENDED}>Suspended</MenuItem>
+                        <MenuItem value={RegistrationStatus.PENDING_RENEWAL}>Pending Renewal</MenuItem>
+                        <MenuItem value={RegistrationStatus.CANCELLED}>Cancelled</MenuItem>
+                        <MenuItem value={RegistrationStatus.PENDING_INSPECTION}>Pending Inspection</MenuItem>
+                        <MenuItem value={RegistrationStatus.INSPECTION_FAILED}>Inspection Failed</MenuItem>
+                        <MenuItem value={RegistrationStatus.DEREGISTERED}>Deregistered</MenuItem>
+                      </Select>
+                    </FormControl>
+                  )}
+                />
+              </Grid>
             </Grid>
+          </Box>
 
-            <Grid item xs={12} md={6}>
-              <Controller
-                name="registration_status"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    select
-                    fullWidth
-                    label="Registration Status"
-                    error={!!errors.registration_status}
-                    helperText={errors.registration_status?.message}
-                  >
-                    <MenuItem value={RegistrationStatus.REGISTERED}>Registered</MenuItem>
-                    <MenuItem value={RegistrationStatus.PENDING_REGISTRATION}>Pending Registration</MenuItem>
-                    <MenuItem value={RegistrationStatus.SUSPENDED}>Suspended</MenuItem>
-                    <MenuItem value={RegistrationStatus.PENDING_RENEWAL}>Pending Renewal</MenuItem>
-                    <MenuItem value={RegistrationStatus.CANCELLED}>Cancelled</MenuItem>
-                    <MenuItem value={RegistrationStatus.PENDING_INSPECTION}>Pending Inspection</MenuItem>
-                    <MenuItem value={RegistrationStatus.INSPECTION_FAILED}>Inspection Failed</MenuItem>
-                    <MenuItem value={RegistrationStatus.DEREGISTERED}>Deregistered</MenuItem>
-                  </TextField>
-                )}
-              />
-            </Grid>
+          {/* Contact Information Section */}
+          <Box sx={{ mb: 4, p: 3, border: '1px solid #e0e0e0', borderRadius: 2, backgroundColor: '#fafafa' }}>
+            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
+              Contact Information
+            </Typography>
+            
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name="contact_person"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      label="Contact Person"
+                      placeholder="Full name of contact person"
+                      error={!!errors.contact_person}
+                      helperText={errors.contact_person?.message}
+                      inputProps={{ maxLength: 100 }}
+                      sx={{ backgroundColor: 'white' }}
+                    />
+                  )}
+                />
+              </Grid>
 
-            {/* Contact Information */}
-            <Grid item xs={12}>
-              <Typography variant="h6" sx={{ mb: 2, mt: 2 }}>
-                Contact Information
-              </Typography>
-              <Divider sx={{ mb: 3 }} />
-            </Grid>
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name="phone_number"
+                  control={control}
+                  rules={{ validate: validatePhoneNumber }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      label="Phone Number"
+                      placeholder="e.g., 0123456789 or +27123456789"
+                      error={!!errors.phone_number}
+                      helperText={errors.phone_number?.message || 'Optional - South African format'}
+                      inputProps={{ maxLength: 15 }}
+                      sx={{ backgroundColor: 'white' }}
+                    />
+                  )}
+                />
+              </Grid>
 
-            <Grid item xs={12} md={6}>
-              <Controller
-                name="contact_person"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label="Contact Person"
-                    placeholder="Name of primary contact"
-                    error={!!errors.contact_person}
-                    helperText={errors.contact_person?.message}
-                    inputProps={{ maxLength: 100 }}
-                  />
-                )}
-              />
-            </Grid>
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name="email_address"
+                  control={control}
+                  rules={{ validate: validateEmail }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      type="email"
+                      label="Email Address"
+                      placeholder="contact@example.com"
+                      error={!!errors.email_address}
+                      helperText={errors.email_address?.message || 'Optional - Primary contact email'}
+                      inputProps={{ maxLength: 100 }}
+                      sx={{ backgroundColor: 'white' }}
+                    />
+                  )}
+                />
+              </Grid>
 
-            <Grid item xs={12} md={6}>
-              <Controller
-                name="phone_number"
-                control={control}
-                rules={{ validate: validatePhoneNumber }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label="Phone Number"
-                    placeholder="+27123456789 or 0123456789"
-                    error={!!errors.phone_number}
-                    helperText={errors.phone_number?.message || 'South African format: +27 or 0 + 9 digits'}
-                    inputProps={{ maxLength: 15 }}
-                  />
-                )}
-              />
+              <Grid item xs={12}>
+                <Controller
+                  name="description"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      multiline
+                      rows={3}
+                      label="Description"
+                      placeholder="Additional notes about this user group..."
+                      error={!!errors.description}
+                      helperText={errors.description?.message || 'Optional - Additional information'}
+                      inputProps={{ maxLength: 500 }}
+                      sx={{ backgroundColor: 'white' }}
+                    />
+                  )}
+                />
+              </Grid>
             </Grid>
+          </Box>
 
-            <Grid item xs={12} md={6}>
-              <Controller
-                name="email_address"
-                control={control}
-                rules={{ validate: validateEmail }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label="Email Address"
-                    placeholder="contact@example.co.za"
-                    error={!!errors.email_address}
-                    helperText={errors.email_address?.message}
-                    inputProps={{ maxLength: 100 }}
-                  />
-                )}
-              />
-            </Grid>
+          {/* Hidden field for infrastructure_type_code */}
+          <Controller
+            name="infrastructure_type_code"
+            control={control}
+            render={({ field }) => (
+              <input type="hidden" {...field} />
+            )}
+          />
 
-            <Grid item xs={12}>
-              <Controller
-                name="description"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    multiline
-                    rows={3}
-                    label="Description"
-                    placeholder="Additional information about this user group..."
-                    error={!!errors.description}
-                    helperText={errors.description?.message}
-                    inputProps={{ maxLength: 500 }}
-                  />
-                )}
-              />
-            </Grid>
-
-            {/* Actions */}
-            <Grid item xs={12}>
-              <Box sx={{ display: 'flex', gap: 2, mt: 3, justifyContent: 'flex-end' }}>
-                <Button 
-                  variant="outlined" 
-                  onClick={() => navigate('/dashboard/admin/locations')}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  variant="contained" 
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Creating...' : 'Create User Group'}
-                </Button>
-              </Box>
-            </Grid>
-          </Grid>
+          {/* Action Buttons */}
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 4 }}>
+            <Button 
+              variant="outlined" 
+              onClick={() => navigate('/dashboard/admin/user-groups')}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              variant="contained" 
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Creating...' : 'Create User Group'}
+            </Button>
+          </Box>
         </form>
       </Paper>
     </Box>
