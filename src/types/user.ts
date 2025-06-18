@@ -12,8 +12,9 @@ export interface User {
   userName: string;
   userTypeCode: string;
   
-  // Personal details
-  personalDetails: PersonalDetails;
+  // Personal details (support both camelCase and snake_case)
+  personalDetails?: PersonalDetails;
+  personal_details?: PersonalDetailsSnakeCase;
   
   // Geographic assignment
   geographicAssignment: GeographicAssignment;
@@ -59,6 +60,15 @@ export interface PersonalDetails {
   email: string;
   phoneNumber?: string;
   alternativePhone?: string;
+}
+
+export interface PersonalDetailsSnakeCase {
+  id_type: string;
+  id_number: string;
+  full_name: string;
+  email: string;
+  phone_number?: string;
+  alternative_phone?: string;
 }
 
 export interface GeographicAssignment {
