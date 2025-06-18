@@ -10,7 +10,6 @@ import {
   Grid,
   IconButton,
   Tooltip,
-  Divider,
   Breadcrumbs,
   Link,
   Autocomplete,
@@ -49,18 +48,6 @@ const PROVINCES = [
 ];
 
 // Validation functions
-const validatePhoneNumber = (value: string) => {
-  if (!value) return true; // Optional field
-  if (!/^(\+27|0)[0-9]{9}$/.test(value)) return 'Please enter a valid South African phone number';
-  return true;
-};
-
-const validateEmail = (value: string) => {
-  if (!value) return true; // Optional field
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address';
-  return true;
-};
-
 const validatePostalCode = (value: string) => {
   if (!value) return true; // Optional field
   if (!/^[0-9]{4}$/.test(value)) return 'Postal code must be 4 digits';

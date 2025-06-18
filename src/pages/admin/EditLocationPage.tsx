@@ -148,8 +148,8 @@ const EditLocationPage: React.FC = () => {
         contact_person: location.contact_person || '',
         phone_number: location.phone_number || '',
         email_address: location.email_address || '',
-        max_users: location.max_users || undefined,
-        max_daily_capacity: location.max_daily_capacity || undefined,
+        max_users: location.max_users ?? undefined,
+        max_daily_capacity: location.max_daily_capacity ?? undefined,
       });
 
       // If there's a contact_user_id, try to find and set the contact user

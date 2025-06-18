@@ -294,7 +294,6 @@ export interface Location extends BaseEntity {
   phone_number?: string;
   fax_number?: string;
   email?: string;
-  email_address?: string;
   
   // Capacity management
   daily_capacity?: number;
