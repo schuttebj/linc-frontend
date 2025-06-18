@@ -9,8 +9,6 @@ import {
   MenuItem,
   Grid,
   IconButton,
-  Tooltip,
-  Divider,
   Breadcrumbs,
   Link,
   FormControl,
@@ -19,7 +17,6 @@ import {
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
-  AutoFixHigh as MagicWandIcon,
 } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
