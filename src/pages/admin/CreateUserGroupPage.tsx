@@ -53,19 +53,6 @@ const USER_GROUP_TYPES = [
   { value: UserGroupType.ADMIN_OFFICE, label: 'Admin Office', code: 50 },
 ];
 
-// Validation functions
-const validatePhoneNumber = (value: string) => {
-  if (!value) return true; // Optional field
-  if (!/^(\+27|0)[0-9]{9}$/.test(value)) return 'Please enter a valid South African phone number';
-  return true;
-};
-
-const validateEmail = (value: string) => {
-  if (!value) return true; // Optional field
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address';
-  return true;
-};
-
 const CreateUserGroupPage: React.FC = () => {
   const navigate = useNavigate();
   const [userGroups, setUserGroups] = useState<UserGroup[]>([]);
