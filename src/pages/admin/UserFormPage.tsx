@@ -200,7 +200,7 @@ const UserFormPage = () => {
 
   // Update privileges when user type changes
   useEffect(() => {
-    if (watchedFields.user_type_code) {
+    if (watchedFields.user_type_code && Object.values(UserType).includes(watchedFields.user_type_code as UserType)) {
       setDefaultPrivilegesForUserType(watchedFields.user_type_code as UserType);
     }
   }, [watchedFields.user_type_code]);
