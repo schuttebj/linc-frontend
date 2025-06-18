@@ -107,11 +107,30 @@ const StaffManagementPage: React.FC = () => {
   const loadAssignments = async () => {
     setLoading(true);
     try {
-      // For now, we'll use a placeholder since we need all assignments, not just by location
-      // This would need to be implemented in the backend as a general getAll method
-      const data: UserLocationAssignment[] = [];
-      setAssignments(data);
+      // Load all assignments by getting assignments for each location
+      // This is a workaround until we have a backend endpoint for all assignments
+      const allLocations = await locationService.getAll();
+      const allAssignments: UserLocationAssignment[] = [];
+      
+      // Load assignments for each location
+      for (const location of allLocations) {
+        try {
+          const locationAssignments = await staffAssignmentService.getByLocation(location.id);
+          // Add location data to each assignment for filtering
+          const enrichedAssignments = locationAssignments.map(assignment => ({
+            ...assignment,
+            location: location
+          }));
+          allAssignments.push(...enrichedAssignments);
+        } catch (error) {
+          // Continue loading other locations even if one fails
+          console.warn(`Failed to load assignments for location ${location.id}:`, error);
+        }
+      }
+      
+      setAssignments(allAssignments);
     } catch (error: any) {
+      console.error('Failed to load staff assignments:', error);
       toast.error(error.message || 'Failed to load staff assignments');
     } finally {
       setLoading(false);

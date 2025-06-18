@@ -24,6 +24,8 @@ import EditLocationPage from './pages/admin/EditLocationPage';
 import UserGroupsPage from './pages/admin/UserGroupsPage';
 import LocationsPage from './pages/admin/LocationsPage';
 import StaffManagementPage from './pages/admin/StaffManagementPage';
+import AssignStaffPage from './pages/admin/AssignStaffPage';
+import EditStaffAssignmentPage from './pages/admin/EditStaffAssignmentPage';
 
 function App() {
   return (
@@ -138,6 +140,22 @@ function App() {
                 element={
                   <ProtectedRoute requiredPermission="assignment_read">
                     <StaffManagementPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="staff-management/create" 
+                element={
+                  <ProtectedRoute requiredPermission="assignment_create">
+                    <AssignStaffPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="staff-management/:assignmentId/edit" 
+                element={
+                  <ProtectedRoute requiredPermission="assignment_update">
+                    <EditStaffAssignmentPage />
                   </ProtectedRoute>
                 } 
               />
