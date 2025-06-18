@@ -18,6 +18,7 @@ import LocationManagementPage from './pages/admin/LocationManagementPage';
 import UserManagementPage from './pages/admin/UserManagementPage';
 import UserFormPage from './pages/admin/UserFormPage';
 import CreateUserGroupPage from './pages/admin/CreateUserGroupPage';
+import EditUserGroupPage from './pages/admin/EditUserGroupPage';
 import CreateLocationPage from './pages/admin/CreateLocationPage';
 import EditLocationPage from './pages/admin/EditLocationPage';
 import UserGroupsPage from './pages/admin/UserGroupsPage';
@@ -153,6 +154,14 @@ function App() {
                 element={
                   <ProtectedRoute requiredPermission="user_group_create">
                     <CreateUserGroupPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="user-groups/:userGroupId/edit" 
+                element={
+                  <ProtectedRoute requiredPermission="user_group_update">
+                    <EditUserGroupPage />
                   </ProtectedRoute>
                 } 
               />
