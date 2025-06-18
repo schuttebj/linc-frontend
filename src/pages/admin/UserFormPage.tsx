@@ -202,6 +202,13 @@ const UserFormPage = () => {
     }
   }, [watchedFields.user_type_code]);
 
+  // Auto-generate username when user group changes
+  useEffect(() => {
+    if (watchedFields.user_group_code && !isEditMode) {
+      generateUsername(watchedFields.user_group_code);
+    }
+  }, [watchedFields.user_group_code, isEditMode]);
+
   const loadLookupData = async () => {
     try {
       const [userGroupsData, provincesData, locationsData] = await Promise.all([
@@ -230,17 +237,13 @@ const UserFormPage = () => {
       // Basic user fields
       setValue('username', userData.username || '');
       setValue('user_group_code', userData.userGroupCode || '');
-      setValue('office_code', userData.officeCode || '');
       setValue('user_type_code', (userData.userTypeCode as UserType) || UserType.STANDARD);
-      setValue('status', userData.status || '');
+      setValue('status', userData.status || UserStatus.ACTIVE);
       setValue('is_active', userData.isActive ?? true);
       setValue('access_level', userData.authorityLevel || 'Standard');
       
       // Job details
-      setValue('employee_id', userData.employeeId || '');
       setValue('department', userData.department || '');
-      setValue('job_title', userData.jobTitle || '');
-      setValue('infrastructure_number', userData.infrastructureNumber || '');
       
       // System settings
       setValue('language', userData.language || 'en');
@@ -341,23 +344,34 @@ const UserFormPage = () => {
   };
 
   // Auto-generate username based on eNaTIS standard: UserGroupCode + 3-digit sequential number
-  const generateUsername = async () => {
-    const userGroupCode = watchedFields.user_group_code;
-    
+  const generateUsername = async (userGroupCode: string) => {
     if (!userGroupCode) {
-      setError('Please select a user group first');
       return;
     }
 
     try {
       // Get existing users in this user group to find the highest user number
-      const existingUsers = await userService.listUsers(1, 1000, { 
-        userGroupCode: userGroupCode 
-      });
+      // Use pagination to get all users (max 100 per page)
+      let allUsers: any[] = [];
+      let page = 1;
+      let hasMore = true;
+      
+      while (hasMore) {
+        const existingUsers = await userService.listUsers(page, 100, { 
+          userGroupCode: userGroupCode 
+        });
+        
+        allUsers = [...allUsers, ...existingUsers.users];
+        hasMore = existingUsers.hasNext;
+        page++;
+        
+        // Safety check to prevent infinite loops
+        if (page > 50) break;
+      }
       
       // Extract user numbers from existing usernames and find the highest
       let highestNumber = 0;
-      existingUsers.users.forEach(user => {
+      allUsers.forEach(user => {
         if (user.username && user.username.startsWith(userGroupCode) && user.username.length === 7) {
           const userNumber = parseInt(user.username.substring(4)); // Extract last 3 digits
           if (!isNaN(userNumber) && userNumber > highestNumber) {
@@ -398,7 +412,7 @@ const UserFormPage = () => {
         }
         
         if (attempts >= 50) {
-          setError('Unable to generate available username. Please try manually.');
+          setError('Unable to generate available username. Please contact administrator.');
         }
       }
     } catch (err) {
@@ -429,9 +443,10 @@ const UserFormPage = () => {
       const userData = {
         // Core identification (snake_case for backend)
         user_group_code: data.user_group_code,
-        office_code: data.office_code,
+        location_id: data.location_id,
         user_name: data.fullName, // Backend expects user_name (display name)
         user_type_code: data.user_type_code,
+        access_level: data.access_level,
         
         // Authentication
         username: data.username,
@@ -455,10 +470,12 @@ const UserFormPage = () => {
         },
         
         // Job details
-        employee_id: data.employee_id,
         department: data.department,
-        job_title: data.job_title,
-        infrastructure_number: data.infrastructure_number,
+        
+        // Address information
+        street_address: data.street_address,
+        city: data.city,
+        postal_code: data.postal_code,
         
         // Status
         status: data.status,
@@ -893,39 +910,30 @@ const UserFormPage = () => {
         </Typography>
         
         <Grid container spacing={3}>
-          {/* Username with Auto-Generate */}
+          {/* Username - Auto-Generated */}
           <Grid item xs={12} md={6}>
             <Controller
               name="username"
               control={control}
               render={({ field }) => (
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label="Username *"
-                    error={!!errors.username || !usernameValidation.valid}
-                    helperText={errors.username?.message || usernameValidation.message || 'V06003: Username must be unique within User Group'}
-                    sx={{ backgroundColor: 'white' }}
-                    InputProps={{
-                      endAdornment: usernameValidation.checking ? (
-                        <InputAdornment position="end">Checking...</InputAdornment>
-                      ) : usernameValidation.valid ? (
-                        <InputAdornment position="end">
-                          <CheckIcon color="success" />
-                        </InputAdornment>
-                      ) : null
-                    }}
-                  />
-                  <Button
-                    variant="outlined"
-                    onClick={generateUsername}
-                    disabled={!watchedFields.user_group_code || loading}
-                    sx={{ minWidth: 'auto', px: 2 }}
-                  >
-                    Generate
-                  </Button>
-                </Box>
+                <TextField
+                  {...field}
+                  fullWidth
+                  label="Username *"
+                  error={!!errors.username || !usernameValidation.valid}
+                  helperText={errors.username?.message || usernameValidation.message || 'Auto-generated based on User Group (V06003: Must be unique)'}
+                  sx={{ backgroundColor: 'white' }}
+                  InputProps={{
+                    readOnly: true,
+                    endAdornment: usernameValidation.checking ? (
+                      <InputAdornment position="end">Checking...</InputAdornment>
+                    ) : field.value ? (
+                      <InputAdornment position="end">
+                        <CheckIcon color="success" />
+                      </InputAdornment>
+                    ) : null
+                  }}
+                />
               )}
             />
           </Grid>

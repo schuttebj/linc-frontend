@@ -134,9 +134,10 @@ export enum AuthorityLevel {
 export interface CreateUserRequest {
   // Core identification (snake_case to match backend)
   user_group_code: string;
-  office_code: string;
+  location_id?: string;
   user_name: string;
   user_type_code: UserType;
+  access_level: string;
   
   // Authentication
   username: string;
@@ -160,10 +161,12 @@ export interface CreateUserRequest {
   };
   
   // Job details (snake_case to match backend)
-  employee_id?: string;
   department?: string;
-  job_title?: string;
-  infrastructure_number?: string;
+  
+  // Address information for staff assignment
+  street_address?: string;
+  city?: string;
+  postal_code?: string;
   
   // Status (snake_case to match backend)
   status: UserStatus;
