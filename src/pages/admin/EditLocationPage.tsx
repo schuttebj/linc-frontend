@@ -90,8 +90,8 @@ const EditLocationPage: React.FC = () => {
       contact_person: '',
       phone_number: '',
       email_address: '',
-      max_users: undefined,
-      max_daily_capacity: undefined,
+      max_users: undefined as number | undefined,
+      max_daily_capacity: undefined as number | undefined,
     }
   });
 
