@@ -97,6 +97,7 @@ const EditLocationPage: React.FC = () => {
 
   // Watch form values for auto-generation
   const userGroupId = watch('user_group_id');
+  const locationName = watch('location_name');
 
   useEffect(() => {
     if (locationId) {
@@ -281,15 +282,27 @@ const EditLocationPage: React.FC = () => {
     setValue('location_code', newCode);
   }, [userGroupId, userGroups, locations, setValue, locationId]);
 
-  // Auto-fill location province when user group changes
+  // Auto-fill location province and generate location code when user group changes
   useEffect(() => {
     if (userGroupId) {
       const userGroup = userGroups.find((ug: UserGroup) => ug.id === userGroupId);
       if (userGroup) {
         setValue('province_code', userGroup.province_code);
+        
+        // Auto-generate location code when user group is selected
+        if (locationName) {
+          generateLocationCode();
+        }
       }
     }
-  }, [userGroupId, userGroups, setValue]);
+  }, [userGroupId, userGroups, setValue, locationName, generateLocationCode]);
+
+  // Auto-generate location code when location name changes (if user group is already selected)
+  useEffect(() => {
+    if (userGroupId && locationName) {
+      generateLocationCode();
+    }
+  }, [locationName, userGroupId, generateLocationCode]);
 
   const handleUpdateLocation = async (data: any) => {
     if (!locationId) {
