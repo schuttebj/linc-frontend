@@ -111,9 +111,10 @@ const CreateUserGroupPage: React.FC = () => {
         status: UserStatus.ACTIVE,
         isActive: true 
       });
-      setUsers(response.users);
+      setUsers(response.users || []);
     } catch (error) {
       console.error('Error loading users:', error);
+      setUsers([]); // Set empty array on error
       toast.error('Failed to load users');
     } finally {
       setLoadingUsers(false);
@@ -121,7 +122,11 @@ const CreateUserGroupPage: React.FC = () => {
   };
 
   const searchUsers = async (searchTerm: string) => {
-    if (!searchTerm || searchTerm.length < 2) return;
+    if (!searchTerm || searchTerm.length < 2) {
+      // Reset to initial users list when search is cleared
+      loadUsers();
+      return;
+    }
     
     try {
       setLoadingUsers(true);
@@ -129,9 +134,11 @@ const CreateUserGroupPage: React.FC = () => {
         excludeAssignedToLocation: undefined,
         userType: undefined // Allow all user types
       });
-      setUsers(searchResults);
+      setUsers(searchResults || []);
     } catch (error) {
       console.error('Error searching users:', error);
+      setUsers([]); // Set empty array on error
+      toast.error('Failed to search users');
     } finally {
       setLoadingUsers(false);
     }
@@ -213,10 +220,10 @@ const CreateUserGroupPage: React.FC = () => {
   // Update contact information when user is selected
   const handleContactUserChange = (user: User | null) => {
     setSelectedContactUser(user);
-    if (user) {
-      setValue('contact_user_id', user.id);
-      setValue('contact_person', user.personalDetails.fullName);
-      setValue('email_address', user.personalDetails.email);
+    if (user && user.personalDetails) {
+      setValue('contact_user_id', user.id || '');
+      setValue('contact_person', user.personalDetails.fullName || '');
+      setValue('email_address', user.personalDetails.email || '');
       setValue('phone_number', user.personalDetails.phoneNumber || '');
     } else {
       setValue('contact_user_id', '');
@@ -255,9 +262,12 @@ const CreateUserGroupPage: React.FC = () => {
     }
   };
 
-  // Helper function to format user display in autocomplete
+  // Helper function to format user display in autocomplete with safety checks
   const formatUserOption = (user: User) => {
-    return `${user.personalDetails.fullName} (${user.username})`;
+    if (!user || !user.personalDetails) return 'Unknown User';
+    const fullName = user.personalDetails.fullName || 'No Name';
+    const username = user.username || 'No Username';
+    return `${fullName} (${username})`;
   };
 
   return (
@@ -473,26 +483,33 @@ const CreateUserGroupPage: React.FC = () => {
                       helperText="Start typing to search for users. Selected user's details will auto-populate below."
                     />
                   )}
-                  renderOption={(props, user) => (
-                    <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Avatar sx={{ width: 32, height: 32 }}>
-                        {user.personalDetails.fullName.charAt(0)}
-                      </Avatar>
-                      <Box>
-                        <Typography variant="body2" fontWeight="medium">
-                          {user.personalDetails.fullName}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {user.username} • {user.personalDetails.email}
-                        </Typography>
+                  renderOption={(props, user) => {
+                    if (!user || !user.personalDetails) return null;
+                    const fullName = user.personalDetails.fullName || 'No Name';
+                    const username = user.username || 'No Username';
+                    const email = user.personalDetails.email || 'No Email';
+                    
+                    return (
+                      <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Avatar sx={{ width: 32, height: 32 }}>
+                          {fullName.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" fontWeight="medium">
+                            {fullName}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {username} • {email}
+                          </Typography>
+                        </Box>
                       </Box>
-                    </Box>
-                  )}
+                    );
+                  }}
                   sx={{ backgroundColor: 'white' }}
                 />
               </Grid>
 
-              {selectedContactUser && (
+              {selectedContactUser && selectedContactUser.personalDetails && (
                 <Grid item xs={12}>
                   <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1, backgroundColor: 'white' }}>
                     <Typography variant="subtitle2" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -500,12 +517,12 @@ const CreateUserGroupPage: React.FC = () => {
                       Selected Contact User
                     </Typography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      <Chip label={`Name: ${selectedContactUser.personalDetails.fullName}`} variant="outlined" />
-                      <Chip label={`Email: ${selectedContactUser.personalDetails.email}`} variant="outlined" />
+                      <Chip label={`Name: ${selectedContactUser.personalDetails.fullName || 'No Name'}`} variant="outlined" />
+                      <Chip label={`Email: ${selectedContactUser.personalDetails.email || 'No Email'}`} variant="outlined" />
                       {selectedContactUser.personalDetails.phoneNumber && (
                         <Chip label={`Phone: ${selectedContactUser.personalDetails.phoneNumber}`} variant="outlined" />
                       )}
-                      <Chip label={`Username: ${selectedContactUser.username}`} variant="outlined" />
+                      <Chip label={`Username: ${selectedContactUser.username || 'No Username'}`} variant="outlined" />
                     </Box>
                   </Box>
                 </Grid>
