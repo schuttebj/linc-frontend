@@ -60,8 +60,9 @@ import {
 
 const steps = [
   'Basic Information',
-  'Work Assignment',
-  'Security & Permissions',
+  'Work Assignment', 
+  'Security & Authentication',
+  'Privileges & Permissions',
   'Review & Submit'
 ];
 
@@ -118,6 +119,21 @@ const UserFormPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showOptionalSections, setShowOptionalSections] = useState({
+    userGroupAssignment: true,
+    locationAssignment: false,
+    privileges: false
+  });
+  
+  // Privilege state management
+  const [privileges, setPrivileges] = useState({
+    userManagement: false,
+    reportAccess: true,
+    systemConfiguration: false,
+    dataEntry: true,
+    approvalRights: false,
+    locationAccess: true
+  });
   
   // Validation states
   const [usernameValidation] = useState<{
@@ -180,6 +196,13 @@ const UserFormPage = () => {
     }
   }, [watchedFields.user_group_code]);
 
+  // Update privileges when user type changes
+  useEffect(() => {
+    if (watchedFields.user_type_code) {
+      setDefaultPrivilegesForUserType(watchedFields.user_type_code);
+    }
+  }, [watchedFields.user_type_code]);
+
   const loadLookupData = async () => {
     try {
       const [userGroupsData, provincesData] = await Promise.all([
@@ -197,7 +220,7 @@ const UserFormPage = () => {
 
   const loadOfficesByUserGroup = async (userGroupCode: string) => {
     try {
-      const userGroup = userGroups.find(ug => ug.user_group_code === userGroupCode);
+      const userGroup = userGroups.find((ug: UserGroup) => ug.user_group_code === userGroupCode);
       if (userGroup) {
         const officesData = await userService.getOfficesByUserGroup(userGroup.id);
         setOffices(officesData);
@@ -212,27 +235,49 @@ const UserFormPage = () => {
       setLoading(true);
       const userData = await userService.getUser(id);
       
-      // Populate form with user data
-      Object.entries(userData).forEach(([key, value]) => {
-        if (key in watchedFields) {
-          setValue(key as keyof UserFormData, value);
-        }
-      });
+      // Map user data to form fields with proper field mapping
+      // Basic user fields
+      setValue('username', userData.username || '');
+      setValue('user_group_code', userData.userGroupCode || '');
+      setValue('office_code', userData.officeCode || '');
+      setValue('user_type_code', userData.userTypeCode || '');
+      setValue('status', userData.status || '');
+      setValue('is_active', userData.isActive ?? true);
+      setValue('authorityLevel', userData.authorityLevel || '');
       
-      // Handle nested objects
-      if (userData.personalDetails) {
-        setValue('fullName', userData.personalDetails.fullName);
-        setValue('email', userData.personalDetails.email);
-        setValue('phoneNumber', userData.personalDetails.phoneNumber);
-        setValue('alternativePhone', userData.personalDetails.alternativePhone);
-        setValue('idType', userData.personalDetails.idType);
-        setValue('idNumber', userData.personalDetails.idNumber);
+      // Job details
+      setValue('employee_id', userData.employeeId || '');
+      setValue('department', userData.department || '');
+      setValue('job_title', userData.jobTitle || '');
+      setValue('infrastructure_number', userData.infrastructureNumber || '');
+      
+      // System settings
+      setValue('language', userData.language || 'en');
+      setValue('timezone', userData.timezone || 'Africa/Johannesburg');
+      setValue('date_format', userData.dateFormat || 'DD/MM/YYYY');
+      
+      // Handle personal details (support both camelCase and snake_case)
+      const personalDetails = userData.personalDetails || (userData as any).personal_details;
+      if (personalDetails) {
+        setValue('fullName', (personalDetails as any).fullName || (personalDetails as any).full_name || '');
+        setValue('email', personalDetails.email || '');
+        setValue('phoneNumber', (personalDetails as any).phoneNumber || (personalDetails as any).phone_number || '');
+        setValue('alternativePhone', (personalDetails as any).alternativePhone || (personalDetails as any).alternative_phone || '');
+        setValue('idType', (personalDetails as any).idType || (personalDetails as any).id_type || '');
+        setValue('idNumber', (personalDetails as any).idNumber || (personalDetails as any).id_number || '');
       }
       
-      if (userData.geographicAssignment) {
-        setValue('countryCode', userData.geographicAssignment.countryCode);
-        setValue('provinceCode', userData.geographicAssignment.provinceCode);
-        setValue('region', userData.geographicAssignment.region);
+      // Handle geographic assignment
+      const geographicAssignment = userData.geographicAssignment;
+      if (geographicAssignment) {
+        setValue('countryCode', geographicAssignment.countryCode || 'ZA');
+        setValue('provinceCode', geographicAssignment.provinceCode || '');
+        setValue('region', geographicAssignment.region || '');
+      }
+      
+      // Load offices for the selected user group
+      if (userData.userGroupCode) {
+        await loadOfficesByUserGroup(userData.userGroupCode);
       }
       
     } catch (err: any) {
@@ -242,17 +287,149 @@ const UserFormPage = () => {
     }
   };
 
+  // Set default privileges based on user type
+  const setDefaultPrivilegesForUserType = (userType: string) => {
+    let defaultPrivileges;
+    
+    switch (userType) {
+      case UserType.ADMIN:
+        defaultPrivileges = {
+          userManagement: true,
+          reportAccess: true,
+          systemConfiguration: true,
+          dataEntry: true,
+          approvalRights: true,
+          locationAccess: true
+        };
+        break;
+      
+      case UserType.SUPERVISOR:
+        defaultPrivileges = {
+          userManagement: false,
+          reportAccess: true,
+          systemConfiguration: false,
+          dataEntry: true,
+          approvalRights: true,
+          locationAccess: true
+        };
+        break;
+      
+      case UserType.EXAMINER:
+        defaultPrivileges = {
+          userManagement: false,
+          reportAccess: true,
+          systemConfiguration: false,
+          dataEntry: true,
+          approvalRights: false,
+          locationAccess: true
+        };
+        break;
+      
+      case UserType.SYSTEM:
+        defaultPrivileges = {
+          userManagement: false,
+          reportAccess: true,
+          systemConfiguration: false,
+          dataEntry: false,
+          approvalRights: false,
+          locationAccess: false
+        };
+        break;
+      
+      case UserType.STANDARD:
+      default:
+        defaultPrivileges = {
+          userManagement: false,
+          reportAccess: true,
+          systemConfiguration: false,
+          dataEntry: true,
+          approvalRights: false,
+          locationAccess: true
+        };
+        break;
+    }
+    
+    setPrivileges(defaultPrivileges);
+  };
+
+  // Auto-generate username based on eNaTIS standard: UserGroupCode + 3-digit sequential number
+  const generateUsername = async () => {
+    const userGroupCode = watchedFields.user_group_code;
+    
+    if (!userGroupCode) {
+      setError('Please select a user group first');
+      return;
+    }
+
+    try {
+      // Get existing users in this user group to find the highest user number
+      const existingUsers = await userService.listUsers(1, 1000, { 
+        userGroupCode: userGroupCode 
+      });
+      
+      // Extract user numbers from existing usernames and find the highest
+      let highestNumber = 0;
+      existingUsers.users.forEach(user => {
+        if (user.username && user.username.startsWith(userGroupCode) && user.username.length === 7) {
+          const userNumber = parseInt(user.username.substring(4)); // Extract last 3 digits
+          if (!isNaN(userNumber) && userNumber > highestNumber) {
+            highestNumber = userNumber;
+          }
+        }
+      });
+      
+      // Generate next sequential number (001-999)
+      const nextNumber = highestNumber + 1;
+      
+      if (nextNumber > 999) {
+        setError(`Maximum users (999) reached for user group ${userGroupCode}`);
+        return;
+      }
+      
+      // Format: UserGroupCode + 3-digit zero-padded number (e.g., WC01001)
+      const generatedUsername = `${userGroupCode}${nextNumber.toString().padStart(3, '0')}`;
+      
+      // Validate username is available
+      const validation = await userService.validateUsername(generatedUsername);
+      if (validation.available) {
+        setValue('username', generatedUsername);
+      } else {
+        // If somehow not available, find next available number
+        let attempts = 0;
+        let testNumber = nextNumber + 1;
+        
+        while (attempts < 50 && testNumber <= 999) {
+          const testUsername = `${userGroupCode}${testNumber.toString().padStart(3, '0')}`;
+          const testValidation = await userService.validateUsername(testUsername);
+          if (testValidation.available) {
+            setValue('username', testUsername);
+            break;
+          }
+          testNumber++;
+          attempts++;
+        }
+        
+        if (attempts >= 50) {
+          setError('Unable to generate available username. Please try manually.');
+        }
+      }
+    } catch (err) {
+      console.error('Error generating username:', err);
+      setError('Failed to generate username');
+    }
+  };
+
   const handleNext = async () => {
     const fieldsToValidate = getFieldsForStep(currentStep);
     const isStepValid = await trigger(fieldsToValidate);
     
     if (isStepValid) {
-      setCurrentStep(prev => Math.min(prev + 1, steps.length - 1));
+      setCurrentStep((prev: number) => Math.min(prev + 1, steps.length - 1));
     }
   };
 
   const handleBack = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 0));
+    setCurrentStep((prev: number) => Math.max(prev - 1, 0));
   };
 
   const handleFormSubmit: SubmitHandler<UserFormData> = async (data: UserFormData) => {
@@ -303,6 +480,9 @@ const UserFormPage = () => {
         role_ids: [], // Will be populated based on userType
         permission_ids: [], // Will be populated based on userType
         
+        // Custom privileges
+        custom_privileges: showOptionalSections.privileges ? privileges : null,
+        
         // Security
         require_password_change: data.require_password_change,
         require_2fa: data.require_2fa,
@@ -333,8 +513,10 @@ const UserFormPage = () => {
         return ['fullName', 'email', 'phoneNumber', 'idType', 'idNumber'];
       case 1: // Work Assignment  
         return ['user_group_code', 'office_code', 'user_type_code', 'countryCode', 'provinceCode'];
-      case 2: // Security & Permissions
-        return ['username', 'password', 'confirmPassword', 'status', 'authorityLevel'];
+      case 2: // Security & Authentication
+        return ['username', 'password', 'confirmPassword', 'status'];
+      case 3: // Privileges & Permissions
+        return ['authorityLevel'];
       default:
         return [];
     }
@@ -350,6 +532,8 @@ const UserFormPage = () => {
       case 2:
         return renderSecurityStep();
       case 3:
+        return renderPrivilegesStep();
+      case 4:
         return renderReviewStep();
       default:
         return null;
@@ -357,17 +541,14 @@ const UserFormPage = () => {
   };
 
   const renderBasicInformationStep = () => (
-    <Card>
-      <CardContent>
-        <Typography variant="h6" gutterBottom>
-          Basic Information
+    <Box>
+      {/* Personal Details Section */}
+      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', borderRadius: 2, backgroundColor: '#fafafa' }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main', mb: 2 }}>
+          Personal Details
         </Typography>
         
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          Enter the user's personal details and identification information.
-        </Typography>
-
-        <Grid container spacing={3} sx={{ mt: 1 }}>
+        <Grid container spacing={3}>
           {/* Full Name */}
           <Grid item xs={12} md={6}>
             <Controller
@@ -493,85 +674,155 @@ const UserFormPage = () => {
             />
           </Grid>
         </Grid>
-      </CardContent>
-    </Card>
+      </Paper>
+
+      {/* Identification Section */}
+      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', borderRadius: 2, backgroundColor: '#fafafa' }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main', mb: 2 }}>
+          Identification
+        </Typography>
+        
+        <Grid container spacing={3}>
+          {/* ID Type */}
+          <Grid item xs={12} md={6}>
+            <Controller
+              name="idType"
+              control={control}
+              render={({ field }) => (
+                <FormControl fullWidth error={!!errors.idType}>
+                  <InputLabel>ID Type *</InputLabel>
+                  <Select {...field} label="ID Type *" sx={{ backgroundColor: 'white' }}>
+                    <MenuItem value={IDType.SA_ID}>South African ID</MenuItem>
+                    <MenuItem value={IDType.PASSPORT}>Passport</MenuItem>
+                    <MenuItem value={IDType.FOREIGN_ID}>Foreign ID</MenuItem>
+                    <MenuItem value={IDType.TRN}>Tax Reference Number</MenuItem>
+                    <MenuItem value={IDType.OTHER}>Other</MenuItem>
+                  </Select>
+                  <FormHelperText>{errors.idType?.message || 'V06005: ID Number must be valid for selected ID Type'}</FormHelperText>
+                </FormControl>
+              )}
+            />
+          </Grid>
+
+          {/* ID Number */}
+          <Grid item xs={12} md={6}>
+            <Controller
+              name="idNumber"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label="ID Number *"
+                  error={!!errors.idNumber}
+                  helperText={errors.idNumber?.message}
+                  sx={{ backgroundColor: 'white' }}
+                />
+              )}
+            />
+          </Grid>
+        </Grid>
+      </Paper>
+    </Box>
   );
 
   const renderWorkAssignmentStep = () => (
-    <Card>
-      <CardContent>
-        <Typography variant="h6" gutterBottom>
-          Work Assignment
+    <Box>
+      {/* User Group Assignment Section */}
+      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', borderRadius: 2, backgroundColor: '#fafafa' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main' }}>
+            User Group Assignment
+          </Typography>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showOptionalSections.userGroupAssignment}
+                onChange={(e) => setShowOptionalSections(prev => ({
+                  ...prev,
+                  userGroupAssignment: e.target.checked
+                }))}
+              />
+            }
+            label="Required"
+          />
+        </Box>
+        
+        {showOptionalSections.userGroupAssignment && (
+          <Grid container spacing={3}>
+            {/* User Group */}
+            <Grid item xs={12} md={6}>
+              <Controller
+                name="user_group_code"
+                control={control}
+                render={({ field }) => (
+                  <FormControl fullWidth error={!!errors.user_group_code}>
+                    <InputLabel>User Group *</InputLabel>
+                    <Select {...field} label="User Group *" sx={{ backgroundColor: 'white' }}>
+                      {userGroups.map((group) => (
+                        <MenuItem key={group.id} value={group.user_group_code}>
+                          {group.user_group_name} ({group.user_group_code})
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    <FormHelperText>{errors.user_group_code?.message || 'V06001: User Group must be active and valid'}</FormHelperText>
+                  </FormControl>
+                )}
+              />
+            </Grid>
+
+            {/* Office */}
+            <Grid item xs={12} md={6}>
+              <Controller
+                name="office_code"
+                control={control}
+                render={({ field }) => (
+                  <FormControl fullWidth error={!!errors.office_code}>
+                    <InputLabel>Office *</InputLabel>
+                    <Select {...field} label="Office *" disabled={!watchedFields.user_group_code} sx={{ backgroundColor: 'white' }}>
+                      {offices.map((office) => (
+                        <MenuItem key={office.id} value={office.officeCode}>
+                          {office.name} ({office.officeCode})
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    <FormHelperText>{errors.office_code?.message || 'V06002: Office must exist within selected User Group'}</FormHelperText>
+                  </FormControl>
+                )}
+              />
+            </Grid>
+
+            {/* User Type */}
+            <Grid item xs={12} md={6}>
+              <Controller
+                name="user_type_code"
+                control={control}
+                render={({ field }) => (
+                  <FormControl fullWidth error={!!errors.user_type_code}>
+                    <InputLabel>User Type *</InputLabel>
+                    <Select {...field} label="User Type *" sx={{ backgroundColor: 'white' }}>
+                      <MenuItem value={UserType.STANDARD}>Standard User</MenuItem>
+                      <MenuItem value={UserType.EXAMINER}>Examiner</MenuItem>
+                      <MenuItem value={UserType.SUPERVISOR}>Supervisor</MenuItem>
+                      <MenuItem value={UserType.ADMIN}>Administrator</MenuItem>
+                      <MenuItem value={UserType.SYSTEM}>System User</MenuItem>
+                    </Select>
+                    <FormHelperText>{errors.user_type_code?.message}</FormHelperText>
+                  </FormControl>
+                )}
+              />
+            </Grid>
+          </Grid>
+        )}
+      </Paper>
+
+      {/* Job Details Section */}
+      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', borderRadius: 2, backgroundColor: '#fafafa' }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main', mb: 2 }}>
+          Job Details
         </Typography>
         
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          Assign the user to a user group, office, and set their work details.
-        </Typography>
-
-        <Grid container spacing={3} sx={{ mt: 1 }}>
-          {/* User Group */}
-          <Grid item xs={12} md={6}>
-            <Controller
-              name="user_group_code"
-              control={control}
-              render={({ field }) => (
-                <FormControl fullWidth error={!!errors.user_group_code}>
-                  <InputLabel>User Group *</InputLabel>
-                  <Select {...field} label="User Group *">
-                    {userGroups.map((group) => (
-                      <MenuItem key={group.id} value={group.user_group_code}>
-                        {group.user_group_name} ({group.user_group_code})
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  <FormHelperText>{errors.user_group_code?.message || 'V06001: User Group must be active and valid'}</FormHelperText>
-                </FormControl>
-              )}
-            />
-          </Grid>
-
-          {/* Office */}
-          <Grid item xs={12} md={6}>
-            <Controller
-              name="office_code"
-              control={control}
-              render={({ field }) => (
-                <FormControl fullWidth error={!!errors.office_code}>
-                  <InputLabel>Office *</InputLabel>
-                  <Select {...field} label="Office *" disabled={!watchedFields.user_group_code}>
-                    {offices.map((office) => (
-                      <MenuItem key={office.id} value={office.officeCode}>
-                        {office.name} ({office.officeCode})
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  <FormHelperText>{errors.office_code?.message || 'V06002: Office must exist within selected User Group'}</FormHelperText>
-                </FormControl>
-              )}
-            />
-          </Grid>
-
-          {/* User Type */}
-          <Grid item xs={12} md={6}>
-            <Controller
-              name="user_type_code"
-              control={control}
-              render={({ field }) => (
-                <FormControl fullWidth error={!!errors.user_type_code}>
-                  <InputLabel>User Type *</InputLabel>
-                  <Select {...field} label="User Type *">
-                    <MenuItem value={UserType.STANDARD}>Standard User</MenuItem>
-                    <MenuItem value={UserType.EXAMINER}>Examiner</MenuItem>
-                    <MenuItem value={UserType.SUPERVISOR}>Supervisor</MenuItem>
-                    <MenuItem value={UserType.ADMIN}>Administrator</MenuItem>
-                    <MenuItem value={UserType.SYSTEM}>System User</MenuItem>
-                  </Select>
-                  <FormHelperText>{errors.user_type_code?.message}</FormHelperText>
-                </FormControl>
-              )}
-            />
-          </Grid>
-
+        <Grid container spacing={3}>
           {/* Department */}
           <Grid item xs={12} md={6}>
             <Controller
@@ -587,6 +838,7 @@ const UserFormPage = () => {
                       {...params}
                       label="Department"
                       helperText="Select from list or enter custom department"
+                      sx={{ backgroundColor: 'white' }}
                     />
                   )}
                   onChange={(_, value) => field.onChange(value)}
@@ -596,20 +848,7 @@ const UserFormPage = () => {
             />
           </Grid>
 
-          {/* Job Title */}
-          <Grid item xs={12} md={6}>
-            <Controller
-              name="job_title"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
-                  label="Job Title"
-                />
-              )}
-            />
-          </Grid>
+
 
           {/* Employee ID */}
           <Grid item xs={12} md={6}>
@@ -621,11 +860,21 @@ const UserFormPage = () => {
                   {...field}
                   fullWidth
                   label="Employee ID"
+                  sx={{ backgroundColor: 'white' }}
                 />
               )}
             />
           </Grid>
+        </Grid>
+      </Paper>
 
+      {/* Geographic Assignment Section */}
+      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', borderRadius: 2, backgroundColor: '#fafafa' }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main', mb: 2 }}>
+          Geographic Assignment
+        </Typography>
+        
+        <Grid container spacing={3}>
           {/* Country */}
           <Grid item xs={12} md={6}>
             <Controller
@@ -634,7 +883,7 @@ const UserFormPage = () => {
               render={({ field }) => (
                 <FormControl fullWidth error={!!errors.countryCode}>
                   <InputLabel>Country *</InputLabel>
-                  <Select {...field} label="Country *">
+                  <Select {...field} label="Country *" sx={{ backgroundColor: 'white' }}>
                     <MenuItem value="ZA">South Africa</MenuItem>
                   </Select>
                   <FormHelperText>{errors.countryCode?.message}</FormHelperText>
@@ -651,7 +900,7 @@ const UserFormPage = () => {
               render={({ field }) => (
                 <FormControl fullWidth error={!!errors.provinceCode}>
                   <InputLabel>Province *</InputLabel>
-                  <Select {...field} label="Province *">
+                  <Select {...field} label="Province *" sx={{ backgroundColor: 'white' }}>
                     {provinces.map((province) => (
                       <MenuItem key={province.code} value={province.code}>
                         {province.name}
@@ -664,44 +913,104 @@ const UserFormPage = () => {
             />
           </Grid>
         </Grid>
-      </CardContent>
-    </Card>
+      </Paper>
+
+      {/* Location Assignment Section */}
+      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', borderRadius: 2, backgroundColor: '#fafafa' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main' }}>
+            Location Assignment
+          </Typography>
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={() => setShowOptionalSections(prev => ({
+              ...prev,
+              locationAssignment: !prev.locationAssignment
+            }))}
+            startIcon={showOptionalSections.locationAssignment ? <ClearIcon /> : <PersonAddIcon />}
+          >
+            {showOptionalSections.locationAssignment ? 'Remove Assignment' : 'Assign User'}
+          </Button>
+        </Box>
+        
+        {showOptionalSections.locationAssignment ? (
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                Location assignments can be managed here or separately after user creation through the Staff Assignment module.
+              </Alert>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Assignment Start Date"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                sx={{ backgroundColor: 'white' }}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Assignment End Date"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                sx={{ backgroundColor: 'white' }}
+              />
+            </Grid>
+          </Grid>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            User will be created without specific location assignments. These can be added later through the Staff Assignment module.
+          </Typography>
+        )}
+      </Paper>
+    </Box>
   );
 
   const renderSecurityStep = () => (
-    <Card>
-      <CardContent>
-        <Typography variant="h6" gutterBottom>
-          Security & Permissions
+    <Box>
+      {/* Authentication Section */}
+      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', borderRadius: 2, backgroundColor: '#fafafa' }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main', mb: 2 }}>
+          Authentication
         </Typography>
         
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          Set up user authentication and define their system access level.
-        </Typography>
-
-        <Grid container spacing={3} sx={{ mt: 1 }}>
-          {/* Username */}
+        <Grid container spacing={3}>
+          {/* Username with Auto-Generate */}
           <Grid item xs={12} md={6}>
             <Controller
               name="username"
               control={control}
               render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
-                  label="Username *"
-                  error={!!errors.username || !usernameValidation.valid}
-                  helperText={errors.username?.message || usernameValidation.message || 'V06003: Username must be unique within User Group'}
-                  InputProps={{
-                    endAdornment: usernameValidation.checking ? (
-                      <InputAdornment position="end">Checking...</InputAdornment>
-                    ) : usernameValidation.valid ? (
-                      <InputAdornment position="end">
-                        <CheckIcon color="success" />
-                      </InputAdornment>
-                    ) : null
-                  }}
-                />
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Username *"
+                    error={!!errors.username || !usernameValidation.valid}
+                    helperText={errors.username?.message || usernameValidation.message || 'V06003: Username must be unique within User Group'}
+                    sx={{ backgroundColor: 'white' }}
+                    InputProps={{
+                      endAdornment: usernameValidation.checking ? (
+                        <InputAdornment position="end">Checking...</InputAdornment>
+                      ) : usernameValidation.valid ? (
+                        <InputAdornment position="end">
+                          <CheckIcon color="success" />
+                        </InputAdornment>
+                      ) : null
+                    }}
+                  />
+                  <Button
+                    variant="outlined"
+                    onClick={generateUsername}
+                    disabled={!watchedFields.user_group_code || loading}
+                    sx={{ minWidth: 'auto', px: 2 }}
+                  >
+                    Generate
+                  </Button>
+                </Box>
               )}
             />
           </Grid>
@@ -786,28 +1095,6 @@ const UserFormPage = () => {
             />
           </Grid>
 
-          {/* Authority Level */}
-          <Grid item xs={12} md={6}>
-            <Controller
-              name="authorityLevel"
-              control={control}
-              render={({ field }) => (
-                <FormControl fullWidth error={!!errors.authorityLevel}>
-                  <InputLabel>Authority Level *</InputLabel>
-                  <Select {...field} label="Authority Level *">
-                    <MenuItem value={AuthorityLevel.NATIONAL}>National Level</MenuItem>
-                    <MenuItem value={AuthorityLevel.PROVINCIAL}>Provincial Level</MenuItem>
-                    <MenuItem value={AuthorityLevel.REGIONAL}>Regional Level</MenuItem>
-                    <MenuItem value={AuthorityLevel.LOCAL}>Local Level</MenuItem>
-                    <MenuItem value={AuthorityLevel.OFFICE}>Office Level</MenuItem>
-                    <MenuItem value={AuthorityLevel.PERSONAL}>Personal Level</MenuItem>
-                  </Select>
-                  <FormHelperText>{errors.authorityLevel?.message}</FormHelperText>
-                </FormControl>
-              )}
-            />
-          </Grid>
-
           {/* Active Status */}
           <Grid item xs={12}>
             <Controller
@@ -864,8 +1151,199 @@ const UserFormPage = () => {
             />
           </Grid>
         </Grid>
-      </CardContent>
-    </Card>
+      </Paper>
+
+
+    </Box>
+  );
+
+  const renderPrivilegesStep = () => (
+    <Box>
+      {/* Authority Level Section */}
+      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', borderRadius: 2, backgroundColor: '#fafafa' }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main', mb: 2 }}>
+          Authority Level
+        </Typography>
+        
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Controller
+              name="authorityLevel"
+              control={control}
+              render={({ field }) => (
+                <FormControl fullWidth error={!!errors.authorityLevel}>
+                  <InputLabel>Authority Level *</InputLabel>
+                  <Select {...field} label="Authority Level *" sx={{ backgroundColor: 'white' }}>
+                    <MenuItem value={AuthorityLevel.NATIONAL}>National Level</MenuItem>
+                    <MenuItem value={AuthorityLevel.PROVINCIAL}>Provincial Level</MenuItem>
+                    <MenuItem value={AuthorityLevel.REGIONAL}>Regional Level</MenuItem>
+                    <MenuItem value={AuthorityLevel.LOCAL}>Local Level</MenuItem>
+                    <MenuItem value={AuthorityLevel.OFFICE}>Office Level</MenuItem>
+                    <MenuItem value={AuthorityLevel.PERSONAL}>Personal Level</MenuItem>
+                  </Select>
+                  <FormHelperText>{errors.authorityLevel?.message}</FormHelperText>
+                </FormControl>
+              )}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Alert severity="info">
+              Authority Level determines the scope of permissions and data access for this user.
+            </Alert>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      {/* System Privileges Section */}
+      <Paper sx={{ p: 3, mb: 3, border: '1px solid #e0e0e0', borderRadius: 2, backgroundColor: '#fafafa' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main' }}>
+            System Privileges
+          </Typography>
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={() => setShowOptionalSections(prev => ({
+              ...prev,
+              privileges: !prev.privileges
+            }))}
+            startIcon={showOptionalSections.privileges ? <ClearIcon /> : <EditIcon />}
+          >
+            {showOptionalSections.privileges ? 'Use Defaults' : 'Configure Custom'}
+          </Button>
+        </Box>
+        
+        {showOptionalSections.privileges ? (
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                Advanced privilege configuration is available in this interface, but most settings can be managed after user creation.
+              </Alert>
+            </Grid>
+            
+            {/* System Privileges */}
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" gutterBottom>
+                Administrative Privileges
+              </Typography>
+              <FormControlLabel
+                control={
+                  <Switch 
+                    checked={privileges.userManagement}
+                    onChange={(e) => setPrivileges(prev => ({
+                      ...prev,
+                      userManagement: e.target.checked
+                    }))}
+                  />
+                }
+                label="User Management"
+              />
+              <br />
+              <FormControlLabel
+                control={
+                  <Switch 
+                    checked={privileges.reportAccess}
+                    onChange={(e) => setPrivileges(prev => ({
+                      ...prev,
+                      reportAccess: e.target.checked
+                    }))}
+                  />
+                }
+                label="Report Access"
+              />
+              <br />
+              <FormControlLabel
+                control={
+                  <Switch 
+                    checked={privileges.systemConfiguration}
+                    onChange={(e) => setPrivileges(prev => ({
+                      ...prev,
+                      systemConfiguration: e.target.checked
+                    }))}
+                  />
+                }
+                label="System Configuration"
+              />
+            </Grid>
+            
+            {/* Location Privileges */}
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" gutterBottom>
+                Operational Privileges
+              </Typography>
+              <FormControlLabel
+                control={
+                  <Switch 
+                    checked={privileges.dataEntry}
+                    onChange={(e) => setPrivileges(prev => ({
+                      ...prev,
+                      dataEntry: e.target.checked
+                    }))}
+                  />
+                }
+                label="Data Entry"
+              />
+              <br />
+              <FormControlLabel
+                control={
+                  <Switch 
+                    checked={privileges.approvalRights}
+                    onChange={(e) => setPrivileges(prev => ({
+                      ...prev,
+                      approvalRights: e.target.checked
+                    }))}
+                  />
+                }
+                label="Approval Rights"
+              />
+              <br />
+              <FormControlLabel
+                control={
+                  <Switch 
+                    checked={privileges.locationAccess}
+                    onChange={(e) => setPrivileges(prev => ({
+                      ...prev,
+                      locationAccess: e.target.checked
+                    }))}
+                  />
+                }
+                label="Location Access"
+              />
+            </Grid>
+          </Grid>
+        ) : (
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                Current privileges are automatically set based on User Type: <strong>{watchedFields.user_type_code || 'Not Selected'}</strong>
+              </Alert>
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" gutterBottom>
+                Administrative Privileges
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                • User Management: <strong>{privileges.userManagement ? 'Enabled' : 'Disabled'}</strong><br/>
+                • Report Access: <strong>{privileges.reportAccess ? 'Enabled' : 'Disabled'}</strong><br/>
+                • System Configuration: <strong>{privileges.systemConfiguration ? 'Enabled' : 'Disabled'}</strong>
+              </Typography>
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" gutterBottom>
+                Operational Privileges
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                • Data Entry: <strong>{privileges.dataEntry ? 'Enabled' : 'Disabled'}</strong><br/>
+                • Approval Rights: <strong>{privileges.approvalRights ? 'Enabled' : 'Disabled'}</strong><br/>
+                • Location Access: <strong>{privileges.locationAccess ? 'Enabled' : 'Disabled'}</strong>
+              </Typography>
+            </Grid>
+          </Grid>
+        )}
+      </Paper>
+    </Box>
   );
 
   const renderReviewStep = () => (
