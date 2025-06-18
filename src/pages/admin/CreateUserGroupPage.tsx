@@ -221,12 +221,25 @@ const CreateUserGroupPage: React.FC = () => {
   const handleContactUserChange = (user: User | null) => {
     setSelectedContactUser(user);
     if (user && (user.personalDetails || user.personal_details)) {
-      // Handle both camelCase and snake_case API responses
-      const personalDetails = user.personalDetails || user.personal_details;
+      // Handle both camelCase and snake_case API responses with proper type checking
+      let fullName = '';
+      let email = '';
+      let phoneNumber = '';
+      
+      if (user.personalDetails) {
+        fullName = user.personalDetails.fullName || '';
+        email = user.personalDetails.email || '';
+        phoneNumber = user.personalDetails.phoneNumber || '';
+      } else if (user.personal_details) {
+        fullName = user.personal_details.full_name || '';
+        email = user.personal_details.email || '';
+        phoneNumber = user.personal_details.phone_number || '';
+      }
+      
       setValue('contact_user_id', user.id || '');
-      setValue('contact_person', personalDetails.fullName || personalDetails.full_name || '');
-      setValue('email_address', personalDetails.email || '');
-      setValue('phone_number', personalDetails.phoneNumber || personalDetails.phone_number || '');
+      setValue('contact_person', fullName);
+      setValue('email_address', email);
+      setValue('phone_number', phoneNumber);
     } else {
       setValue('contact_user_id', '');
       setValue('contact_person', '');
@@ -268,11 +281,15 @@ const CreateUserGroupPage: React.FC = () => {
   const formatUserOption = (user: User) => {
     if (!user) return 'Unknown User';
     
-    // Handle both camelCase and snake_case API responses
-    const personalDetails = (user as any).personalDetails || (user as any).personal_details;
-    if (!personalDetails) return 'Unknown User';
+    // Handle both camelCase and snake_case API responses with proper type checking
+    let fullName = 'No Name';
     
-    const fullName = personalDetails.fullName || personalDetails.full_name || 'No Name';
+    if (user.personalDetails && user.personalDetails.fullName) {
+      fullName = user.personalDetails.fullName;
+    } else if (user.personal_details && user.personal_details.full_name) {
+      fullName = user.personal_details.full_name;
+    }
+    
     const username = user.username || 'No Username';
     return `${fullName} (${username})`;
   };
@@ -493,13 +510,19 @@ const CreateUserGroupPage: React.FC = () => {
                   renderOption={(props, user) => {
                     if (!user) return null;
                     
-                    // Handle both camelCase and snake_case API responses
-                    const personalDetails = (user as any).personalDetails || (user as any).personal_details;
-                    if (!personalDetails) return null;
+                    // Handle both camelCase and snake_case API responses with proper type checking
+                    let fullName = 'No Name';
+                    let email = 'No Email';
                     
-                    const fullName = personalDetails.fullName || personalDetails.full_name || 'No Name';
+                    if (user.personalDetails) {
+                      fullName = user.personalDetails.fullName || 'No Name';
+                      email = user.personalDetails.email || 'No Email';
+                    } else if (user.personal_details) {
+                      fullName = user.personal_details.full_name || 'No Name';
+                      email = user.personal_details.email || 'No Email';
+                    }
+                    
                     const username = user.username || 'No Username';
-                    const email = personalDetails.email || 'No Email';
                     
                     return (
                       <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
