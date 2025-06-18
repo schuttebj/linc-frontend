@@ -19,6 +19,7 @@ import UserManagementPage from './pages/admin/UserManagementPage';
 import UserFormPage from './pages/admin/UserFormPage';
 import CreateUserGroupPage from './pages/admin/CreateUserGroupPage';
 import CreateLocationPage from './pages/admin/CreateLocationPage';
+import EditLocationPage from './pages/admin/EditLocationPage';
 import UserGroupsPage from './pages/admin/UserGroupsPage';
 import LocationsPage from './pages/admin/LocationsPage';
 import StaffManagementPage from './pages/admin/StaffManagementPage';
@@ -168,6 +169,14 @@ function App() {
                 element={
                   <ProtectedRoute requiredPermission="location_create">
                     <CreateLocationPage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="locations-management/:locationId/edit" 
+                element={
+                  <ProtectedRoute requiredPermission="location_update">
+                    <EditLocationPage />
                   </ProtectedRoute>
                 } 
               />

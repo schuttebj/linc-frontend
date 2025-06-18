@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -10,12 +10,12 @@ import {
   Grid,
   IconButton,
   Tooltip,
-  Divider,
   Breadcrumbs,
   Link,
   Autocomplete,
   Avatar,
   Chip,
+  CircularProgress,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -49,30 +49,20 @@ const PROVINCES = [
 ];
 
 // Validation functions
-const validatePhoneNumber = (value: string) => {
-  if (!value) return true; // Optional field
-  if (!/^(\+27|0)[0-9]{9}$/.test(value)) return 'Please enter a valid South African phone number';
-  return true;
-};
-
-const validateEmail = (value: string) => {
-  if (!value) return true; // Optional field
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address';
-  return true;
-};
-
 const validatePostalCode = (value: string) => {
   if (!value) return true; // Optional field
   if (!/^[0-9]{4}$/.test(value)) return 'Postal code must be 4 digits';
   return true;
 };
 
-const CreateLocationPage: React.FC = () => {
+const EditLocationPage: React.FC = () => {
   const navigate = useNavigate();
+  const { locationId } = useParams<{ locationId: string }>();
   const [userGroups, setUserGroups] = useState<UserGroup[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [loadingLocation, setLoadingLocation] = useState(true);
   const [selectedContactUser, setSelectedContactUser] = useState<User | null>(null);
 
   // Form setup with validation
@@ -81,6 +71,7 @@ const CreateLocationPage: React.FC = () => {
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors, isSubmitting }
   } = useForm({
     defaultValues: {
@@ -106,12 +97,14 @@ const CreateLocationPage: React.FC = () => {
 
   // Watch form values for auto-generation
   const userGroupId = watch('user_group_id');
-  const locationName = watch('location_name');
 
   useEffect(() => {
-    loadData();
-    loadUsers();
-  }, []);
+    if (locationId) {
+      loadData();
+      loadUsers();
+      loadLocation();
+    }
+  }, [locationId]);
 
   const loadData = async () => {
     try {
@@ -124,6 +117,57 @@ const CreateLocationPage: React.FC = () => {
     } catch (error) {
       console.error('Error loading data:', error);
       toast.error('Failed to load data');
+    }
+  };
+
+  const loadLocation = async () => {
+    if (!locationId) {
+      toast.error('Location ID is required');
+      navigate('/dashboard/admin/locations-management');
+      return;
+    }
+
+    try {
+      setLoadingLocation(true);
+      const location = await locationService.getById(locationId);
+      
+      // Populate form with location data
+      reset({
+        location_name: location.location_name || '',
+        location_code: location.location_code || '',
+        user_group_id: location.user_group_id || '',
+        infrastructure_type: location.infrastructure_type || InfrastructureType.FIXED_DLTC,
+        operational_status: location.operational_status || OperationalStatus.OPERATIONAL,
+        location_scope: location.location_scope || LocationScope.PROVINCIAL,
+        address_line_1: location.address?.address_line_1 || '',
+        address_line_2: location.address?.address_line_2 || '',
+        city: location.address?.city || '',
+        province_code: location.address?.province_code || location.province_code || '',
+        postal_code: location.address?.postal_code || '',
+        contact_user_id: location.contact_user_id || '',
+        contact_person: location.contact_person || '',
+        phone_number: location.phone_number || '',
+        email_address: location.email_address || '',
+        max_users: location.max_users || undefined,
+        max_daily_capacity: location.max_daily_capacity || undefined,
+      });
+
+      // If there's a contact_user_id, try to find and set the contact user
+      if (location.contact_user_id) {
+        try {
+          const contactUser = await userService.getUserById(location.contact_user_id);
+          setSelectedContactUser(contactUser);
+        } catch (error) {
+          console.error('Failed to load contact user:', error);
+          // Don't show error for this, just continue without pre-selected user
+        }
+      }
+    } catch (error: any) {
+      console.error('Error loading location:', error);
+      toast.error(error.message || 'Failed to load location');
+      navigate('/dashboard/admin/locations-management');
+    } finally {
+      setLoadingLocation(false);
     }
   };
 
@@ -146,7 +190,6 @@ const CreateLocationPage: React.FC = () => {
 
   const searchUsers = async (searchTerm: string) => {
     if (!searchTerm || searchTerm.length < 2) {
-      // Reset to initial users list when search is cleared
       loadUsers();
       return;
     }
@@ -155,7 +198,7 @@ const CreateLocationPage: React.FC = () => {
       setLoadingUsers(true);
       const searchResults = await userService.searchUsers(searchTerm, 50, {
         excludeAssignedToLocation: undefined,
-        userType: undefined // Allow all user types
+        userType: undefined
       });
       setUsers(searchResults || []);
     } catch (error) {
@@ -217,13 +260,13 @@ const CreateLocationPage: React.FC = () => {
 
   // Auto-generate location code
   const generateLocationCode = useCallback(() => {
-    if (!userGroupId || !locationName) return;
+    if (!userGroupId) return;
 
     const userGroup = userGroups.find((ug: UserGroup) => ug.id === userGroupId);
     if (!userGroup) return;
 
     const existingCodes = locations
-      .filter((loc: Location) => loc.location_code?.startsWith(userGroup.user_group_code))
+      .filter((loc: Location) => loc.location_code?.startsWith(userGroup.user_group_code) && loc.id !== locationId)
       .map((loc: Location) => loc.location_code);
 
     // Generate sequential code
@@ -236,7 +279,7 @@ const CreateLocationPage: React.FC = () => {
     }
 
     setValue('location_code', newCode);
-  }, [userGroupId, locationName, userGroups, locations, setValue]);
+  }, [userGroupId, userGroups, locations, setValue, locationId]);
 
   // Auto-fill location province when user group changes
   useEffect(() => {
@@ -248,9 +291,14 @@ const CreateLocationPage: React.FC = () => {
     }
   }, [userGroupId, userGroups, setValue]);
 
-  const handleCreateLocation = async (data: any) => {
+  const handleUpdateLocation = async (data: any) => {
+    if (!locationId) {
+      toast.error('Location ID is required');
+      return;
+    }
+
     try {
-      const createData = {
+      const updateData = {
         location_name: data.location_name,
         location_code: data.location_code,
         user_group_id: data.user_group_id,
@@ -270,20 +318,29 @@ const CreateLocationPage: React.FC = () => {
         email_address: data.email_address,
         max_users: data.max_users,
         max_daily_capacity: data.max_daily_capacity,
+        // Note: contact_user_id can be used later for staff assignment integration
       };
 
-      await locationService.create(createData);
-      toast.success('Location created successfully');
+      await locationService.update(locationId, updateData);
+      toast.success('Location updated successfully');
       
-      // TODO: If contact_user_id is provided, create staff assignment
+      // TODO: If contact_user_id is provided, update staff assignment
       // This will be implemented when integrating with staff management
       
-      navigate('/dashboard/admin/locations');
+      navigate('/dashboard/admin/locations-management');
     } catch (error: any) {
-      console.error('Error creating location:', error);
-      toast.error(error.response?.data?.detail || error.message || 'Failed to create location');
+      console.error('Error updating location:', error);
+      toast.error(error.response?.data?.detail || error.message || 'Failed to update location');
     }
   };
+
+  if (loadingLocation) {
+    return (
+      <Box sx={{ p: 3, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3 }}>
@@ -293,27 +350,27 @@ const CreateLocationPage: React.FC = () => {
           <Link 
             color="inherit" 
             href="#" 
-            onClick={() => navigate('/dashboard/admin/locations')}
+            onClick={() => navigate('/dashboard/admin/locations-management')}
             sx={{ cursor: 'pointer' }}
           >
             Location Management
           </Link>
-          <Typography color="text.primary">Create Location</Typography>
+          <Typography color="text.primary">Edit Location</Typography>
         </Breadcrumbs>
         
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton onClick={() => navigate('/dashboard/admin/locations')}>
+          <IconButton onClick={() => navigate('/dashboard/admin/locations-management')}>
             <ArrowBackIcon />
           </IconButton>
           <Typography variant="h4" component="h1">
-            Create New Location
+            Edit Location
           </Typography>
         </Box>
       </Box>
 
       {/* Form */}
       <Paper sx={{ p: 3 }}>
-        <form onSubmit={handleSubmit(handleCreateLocation)}>
+        <form onSubmit={handleSubmit(handleUpdateLocation)}>
           {/* Basic Information Section */}
           <Box sx={{ mb: 4, p: 3, border: '1px solid #e0e0e0', borderRadius: 2, backgroundColor: '#fafafa' }}>
             <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
@@ -801,7 +858,7 @@ const CreateLocationPage: React.FC = () => {
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 4 }}>
             <Button 
               variant="outlined" 
-              onClick={() => navigate('/dashboard/admin/locations')}
+              onClick={() => navigate('/dashboard/admin/locations-management')}
               disabled={isSubmitting}
             >
               Cancel
@@ -811,7 +868,7 @@ const CreateLocationPage: React.FC = () => {
               variant="contained" 
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Creating...' : 'Create Location'}
+              {isSubmitting ? 'Updating...' : 'Update Location'}
             </Button>
           </Box>
         </form>
@@ -820,4 +877,4 @@ const CreateLocationPage: React.FC = () => {
   );
 };
 
-export default CreateLocationPage; 
+export default EditLocationPage; 
