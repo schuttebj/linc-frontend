@@ -242,7 +242,7 @@ const UserFormPage = () => {
       setValue('username', userData.username || '');
       setValue('user_group_code', userData.userGroupCode || '');
       setValue('office_code', userData.officeCode || '');
-      setValue('user_type_code', userData.userTypeCode || '');
+      setValue('user_type_code', (userData.userTypeCode as UserType) || UserType.STANDARD);
       setValue('status', userData.status || '');
       setValue('is_active', userData.isActive ?? true);
       setValue('authorityLevel', userData.authorityLevel || '');
