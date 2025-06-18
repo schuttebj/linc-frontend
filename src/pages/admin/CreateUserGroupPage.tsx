@@ -14,14 +14,20 @@ import {
   FormControl,
   InputLabel,
   Select,
+  Autocomplete,
+  Avatar,
+  Chip,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
+  Person as PersonIcon,
 } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { userGroupService } from '../../services/locationService';
 import { UserGroupType, RegistrationStatus, UserGroup } from '../../types/location';
+import { userService } from '../../services/userService';
+import { User, UserStatus } from '../../types/user';
 
 // Constants
 const PROVINCES = [
@@ -63,6 +69,9 @@ const validateEmail = (value: string) => {
 const CreateUserGroupPage: React.FC = () => {
   const navigate = useNavigate();
   const [userGroups, setUserGroups] = useState<UserGroup[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [selectedContactUser, setSelectedContactUser] = useState<User | null>(null);
 
   // Form setup with validation
   const {
@@ -81,6 +90,7 @@ const CreateUserGroupPage: React.FC = () => {
       province_code: '',
       registration_status: RegistrationStatus.REGISTERED,
       description: '',
+      contact_user_id: '', // New field for selected user
       contact_person: '',
       phone_number: '',
       email_address: '',
@@ -94,6 +104,7 @@ const CreateUserGroupPage: React.FC = () => {
 
   useEffect(() => {
     loadUserGroups();
+    loadUsers();
   }, []);
 
   const loadUserGroups = async () => {
@@ -103,6 +114,39 @@ const CreateUserGroupPage: React.FC = () => {
     } catch (error) {
       console.error('Error loading user groups:', error);
       toast.error('Failed to load user groups');
+    }
+  };
+
+  const loadUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      const response = await userService.listUsers(1, 100, { 
+        status: UserStatus.ACTIVE,
+        isActive: true 
+      });
+      setUsers(response.users);
+    } catch (error) {
+      console.error('Error loading users:', error);
+      toast.error('Failed to load users');
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const searchUsers = async (searchTerm: string) => {
+    if (!searchTerm || searchTerm.length < 2) return;
+    
+    try {
+      setLoadingUsers(true);
+      const searchResults = await userService.searchUsers(searchTerm, 50, {
+        excludeAssignedToLocation: undefined,
+        userType: undefined // Allow all user types
+      });
+      setUsers(searchResults);
+    } catch (error) {
+      console.error('Error searching users:', error);
+    } finally {
+      setLoadingUsers(false);
     }
   };
 
@@ -179,6 +223,22 @@ const CreateUserGroupPage: React.FC = () => {
     }
   }, [userGroupType, setValue]);
 
+  // Update contact information when user is selected
+  const handleContactUserChange = (user: User | null) => {
+    setSelectedContactUser(user);
+    if (user) {
+      setValue('contact_user_id', user.id);
+      setValue('contact_person', user.personalDetails.fullName);
+      setValue('email_address', user.personalDetails.email);
+      setValue('phone_number', user.personalDetails.phoneNumber || '');
+    } else {
+      setValue('contact_user_id', '');
+      setValue('contact_person', '');
+      setValue('email_address', '');
+      setValue('phone_number', '');
+    }
+  };
+
   const handleCreateUserGroup = async (data: any) => {
     try {
       const createData = {
@@ -192,15 +252,25 @@ const CreateUserGroupPage: React.FC = () => {
         contact_person: data.contact_person,
         phone_number: data.phone_number,
         email_address: data.email_address,
+        // Note: contact_user_id can be used later for staff assignment integration
       };
 
       await userGroupService.create(createData);
       toast.success('User group created successfully');
+      
+      // TODO: If contact_user_id is provided, create staff assignment
+      // This will be implemented when integrating with staff management
+      
       navigate('/dashboard/admin/user-groups');
     } catch (error: any) {
       console.error('Error creating user group:', error);
       toast.error(error.response?.data?.detail || error.message || 'Failed to create user group');
     }
+  };
+
+  // Helper function to format user display in autocomplete
+  const formatUserOption = (user: User) => {
+    return `${user.personalDetails.fullName} (${user.username})`;
   };
 
   return (
@@ -390,8 +460,70 @@ const CreateUserGroupPage: React.FC = () => {
             <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
               Contact Information
             </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Select a user to automatically populate contact details. This user can later be assigned as the primary contact for this user group.
+            </Typography>
             
             <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <Autocomplete
+                  options={users}
+                  getOptionLabel={formatUserOption}
+                  value={selectedContactUser}
+                  onChange={(_, newValue) => handleContactUserChange(newValue)}
+                  onInputChange={(_, newInputValue) => {
+                    if (newInputValue && newInputValue.length >= 2) {
+                      searchUsers(newInputValue);
+                    }
+                  }}
+                  loading={loadingUsers}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Select Contact User (Optional)"
+                      placeholder="Search for a user by name or username..."
+                      sx={{ backgroundColor: 'white' }}
+                      helperText="Start typing to search for users. Selected user's details will auto-populate below."
+                    />
+                  )}
+                  renderOption={(props, user) => (
+                    <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Avatar sx={{ width: 32, height: 32 }}>
+                        {user.personalDetails.fullName.charAt(0)}
+                      </Avatar>
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium">
+                          {user.personalDetails.fullName}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {user.username} • {user.personalDetails.email}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  )}
+                  sx={{ backgroundColor: 'white' }}
+                />
+              </Grid>
+
+              {selectedContactUser && (
+                <Grid item xs={12}>
+                  <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1, backgroundColor: 'white' }}>
+                    <Typography variant="subtitle2" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <PersonIcon color="primary" />
+                      Selected Contact User
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      <Chip label={`Name: ${selectedContactUser.personalDetails.fullName}`} variant="outlined" />
+                      <Chip label={`Email: ${selectedContactUser.personalDetails.email}`} variant="outlined" />
+                      {selectedContactUser.personalDetails.phoneNumber && (
+                        <Chip label={`Phone: ${selectedContactUser.personalDetails.phoneNumber}`} variant="outlined" />
+                      )}
+                      <Chip label={`Username: ${selectedContactUser.username}`} variant="outlined" />
+                    </Box>
+                  </Box>
+                </Grid>
+              )}
+
               <Grid item xs={12} md={6}>
                 <Controller
                   name="contact_person"
@@ -400,12 +532,13 @@ const CreateUserGroupPage: React.FC = () => {
                     <TextField
                       {...field}
                       fullWidth
-                      label="Contact Person"
-                      placeholder="Full name of contact person"
+                      label="Contact Person Name"
+                      placeholder="Auto-populated from selected user"
                       error={!!errors.contact_person}
-                      helperText={errors.contact_person?.message}
+                      helperText={selectedContactUser ? 'Auto-populated from selected user' : 'Select a user above or enter manually'}
                       inputProps={{ maxLength: 100 }}
                       sx={{ backgroundColor: 'white' }}
+                      InputProps={{ readOnly: !!selectedContactUser }}
                     />
                   )}
                 />
@@ -415,17 +548,17 @@ const CreateUserGroupPage: React.FC = () => {
                 <Controller
                   name="phone_number"
                   control={control}
-                  rules={{ validate: validatePhoneNumber }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       fullWidth
                       label="Phone Number"
-                      placeholder="e.g., 0123456789 or +27123456789"
+                      placeholder="Auto-populated from selected user"
                       error={!!errors.phone_number}
-                      helperText={errors.phone_number?.message || 'Optional - South African format'}
+                      helperText={selectedContactUser ? 'Auto-populated from selected user' : 'Select a user above or enter manually'}
                       inputProps={{ maxLength: 15 }}
                       sx={{ backgroundColor: 'white' }}
+                      InputProps={{ readOnly: !!selectedContactUser }}
                     />
                   )}
                 />
@@ -435,18 +568,18 @@ const CreateUserGroupPage: React.FC = () => {
                 <Controller
                   name="email_address"
                   control={control}
-                  rules={{ validate: validateEmail }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       fullWidth
                       type="email"
                       label="Email Address"
-                      placeholder="contact@example.com"
+                      placeholder="Auto-populated from selected user"
                       error={!!errors.email_address}
-                      helperText={errors.email_address?.message || 'Optional - Primary contact email'}
+                      helperText={selectedContactUser ? 'Auto-populated from selected user' : 'Select a user above or enter manually'}
                       inputProps={{ maxLength: 100 }}
                       sx={{ backgroundColor: 'white' }}
+                      InputProps={{ readOnly: !!selectedContactUser }}
                     />
                   )}
                 />
@@ -475,9 +608,16 @@ const CreateUserGroupPage: React.FC = () => {
             </Grid>
           </Box>
 
-          {/* Hidden field for infrastructure_type_code */}
+          {/* Hidden fields */}
           <Controller
             name="infrastructure_type_code"
+            control={control}
+            render={({ field }) => (
+              <input type="hidden" {...field} />
+            )}
+          />
+          <Controller
+            name="contact_user_id"
             control={control}
             render={({ field }) => (
               <input type="hidden" {...field} />
