@@ -40,7 +40,9 @@ import {
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
   ArrowBack as ArrowBackIcon,
-  Check as CheckIcon
+  Check as CheckIcon,
+  PersonAdd as PersonAddIcon,
+  Edit as EditIcon
 } from '@mui/icons-material';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -199,7 +201,7 @@ const UserFormPage = () => {
   // Update privileges when user type changes
   useEffect(() => {
     if (watchedFields.user_type_code) {
-      setDefaultPrivilegesForUserType(watchedFields.user_type_code);
+      setDefaultPrivilegesForUserType(watchedFields.user_type_code as UserType);
     }
   }, [watchedFields.user_type_code]);
 
