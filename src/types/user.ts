@@ -343,8 +343,16 @@ export interface UserFormData extends Omit<CreateUserRequest, 'personalDetails' 
   provinceCode: string;
   region?: string;
   
-  // Authority level (from User interface)
-  authorityLevel: AuthorityLevel;
+  // Location assignment (new field)
+  location_id?: string;
+  
+  // Access level (replaces authorityLevel)
+  access_level: string;
+  
+  // Address information for staff assignment
+  street_address?: string;
+  city?: string;
+  postal_code?: string;
   
   // Additional form fields
   confirmPassword: string;
