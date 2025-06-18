@@ -9,7 +9,6 @@ import {
   MenuItem,
   Grid,
   IconButton,
-  Tooltip,
   Breadcrumbs,
   Link,
   Autocomplete,
@@ -19,7 +18,6 @@ import {
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
-  AutoFixHigh as MagicWandIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
 import { Controller, useForm } from 'react-hook-form';
@@ -437,30 +435,23 @@ const EditLocationPage: React.FC = () => {
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
-                  <Controller
-                    name="location_code"
-                    control={control}
-                    rules={{ required: 'Location code is required' }}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        fullWidth
-                        label="Location Code *"
-                        placeholder="e.g., WC001L001"
-                        error={!!errors.location_code}
-                        helperText={errors.location_code?.message || 'Unique location identifier'}
-                        inputProps={{ style: { textTransform: 'uppercase' } }}
-                        sx={{ backgroundColor: 'white' }}
-                      />
-                    )}
-                  />
-                  <Tooltip title="Auto-generate code">
-                    <IconButton onClick={generateLocationCode} color="primary">
-                      <MagicWandIcon />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
+                <Controller
+                  name="location_code"
+                  control={control}
+                  rules={{ required: 'Location code is required' }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      label="Location Code *"
+                      placeholder="e.g., WC001L001"
+                      error={!!errors.location_code}
+                      helperText={errors.location_code?.message || 'Auto-generated based on user group and location name'}
+                      inputProps={{ style: { textTransform: 'uppercase' } }}
+                      sx={{ backgroundColor: 'white' }}
+                    />
+                  )}
+                />
               </Grid>
 
               <Grid item xs={12} md={6}>
