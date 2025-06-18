@@ -41,7 +41,6 @@ import {
   VisibilityOff as VisibilityOffIcon,
   ArrowBack as ArrowBackIcon,
   Check as CheckIcon,
-  PersonAdd as PersonAddIcon,
   Edit as EditIcon
 } from '@mui/icons-material';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
@@ -54,9 +53,7 @@ import {
   UserType,
   UserStatus,
   IDType,
-  AuthorityLevel,
   UserGroup,
-  Office,
   Province
 } from '../../types/user';
 import { locationService } from '../../services/locationService';
@@ -157,7 +154,6 @@ const UserFormPage = () => {
   
   // Lookup data
   const [userGroups, setUserGroups] = useState<UserGroup[]>([]);
-  const [offices, setOffices] = useState<Office[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [departments] = useState(['IT', 'Operations', 'Admin', 'Finance', 'Legal', 'Customer Service']);
@@ -197,12 +193,7 @@ const UserFormPage = () => {
     }
   }, [isEditMode, userId]);
 
-  // Load offices when user group changes
-  useEffect(() => {
-    if (watchedFields.user_group_code) {
-      loadOfficesByUserGroup(watchedFields.user_group_code);
-    }
-  }, [watchedFields.user_group_code]);
+
 
   // Update privileges when user type changes
   useEffect(() => {
@@ -228,17 +219,7 @@ const UserFormPage = () => {
     }
   };
 
-  const loadOfficesByUserGroup = async (userGroupCode: string) => {
-    try {
-      const userGroup = userGroups.find((ug: UserGroup) => ug.user_group_code === userGroupCode);
-      if (userGroup) {
-        const officesData = await userService.getOfficesByUserGroup(userGroup.id);
-        setOffices(officesData);
-      }
-    } catch (err) {
-      console.error('Error loading offices:', err);
-    }
-  };
+
 
   const loadUser = async (id: string) => {
     try {
@@ -285,10 +266,7 @@ const UserFormPage = () => {
         setValue('region', geographicAssignment.region || '');
       }
       
-      // Load offices for the selected user group
-      if (userData.userGroupCode) {
-        await loadOfficesByUserGroup(userData.userGroupCode);
-      }
+
       
     } catch (err: any) {
       setError(err.message || 'Failed to load user data');
