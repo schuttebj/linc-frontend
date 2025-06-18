@@ -133,6 +133,7 @@ export interface UserGroup extends BaseEntity {
   parent_user_group?: UserGroup;
   suspended_until?: string;
   contact_person?: string;
+  contact_user_id?: string;
   phone_number?: string;
   email?: string;
   operational_notes?: string;
@@ -289,9 +290,11 @@ export interface Location extends BaseEntity {
   
   // Contact information
   contact_person?: string;
+  contact_user_id?: string;
   phone_number?: string;
   fax_number?: string;
   email?: string;
+  email_address?: string;
   
   // Capacity management
   daily_capacity?: number;

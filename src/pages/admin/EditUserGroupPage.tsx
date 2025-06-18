@@ -67,9 +67,9 @@ const EditUserGroupPage: React.FC = () => {
     defaultValues: {
       user_group_name: '',
       user_group_code: '',
-      user_group_type: UserGroupType.DLTC,
+      user_group_type: UserGroupType.FIXED_DLTC,
       province_code: '',
-      registration_status: RegistrationStatus.ACTIVE,
+      registration_status: RegistrationStatus.REGISTERED,
       address_line_1: '',
       address_line_2: '',
       city: '',
@@ -119,9 +119,9 @@ const EditUserGroupPage: React.FC = () => {
       reset({
         user_group_name: userGroup.user_group_name || '',
         user_group_code: userGroup.user_group_code || '',
-        user_group_type: userGroup.user_group_type || UserGroupType.DLTC,
+        user_group_type: userGroup.user_group_type || UserGroupType.FIXED_DLTC,
         province_code: userGroup.province_code || '',
-        registration_status: userGroup.registration_status || RegistrationStatus.ACTIVE,
+        registration_status: userGroup.registration_status || RegistrationStatus.REGISTERED,
         address_line_1: userGroup.address?.address_line_1 || '',
         address_line_2: userGroup.address?.address_line_2 || '',
         city: userGroup.address?.city || '',
@@ -136,7 +136,7 @@ const EditUserGroupPage: React.FC = () => {
       // If there's a contact_user_id, try to find and set the contact user
       if (userGroup.contact_user_id) {
         try {
-          const contactUser = await userService.getUserById(userGroup.contact_user_id);
+          const contactUser = await userService.getUser(userGroup.contact_user_id);
           setSelectedContactUser(contactUser);
         } catch (error) {
           console.error('Failed to load contact user:', error);
@@ -178,7 +178,7 @@ const EditUserGroupPage: React.FC = () => {
     try {
       setLoadingUsers(true);
       const searchResults = await userService.searchUsers(searchTerm, 50, {
-        excludeAssignedToUserGroup: undefined,
+        excludeAssignedToLocation: undefined,
         userType: undefined
       });
       setUsers(searchResults || []);
@@ -268,8 +268,11 @@ const EditUserGroupPage: React.FC = () => {
 
     let baseName = '';
     switch (userGroupType) {
-      case UserGroupType.DLTC:
+      case UserGroupType.FIXED_DLTC:
         baseName = `${provinceName} DLTC`;
+        break;
+      case UserGroupType.MOBILE_DLTC:
+        baseName = `${provinceName} Mobile DLTC`;
         break;
       case UserGroupType.PRINTING_CENTER:
         baseName = `${provinceName} Printing Center`;
@@ -277,14 +280,17 @@ const EditUserGroupPage: React.FC = () => {
       case UserGroupType.REGISTERING_AUTHORITY:
         baseName = `${provinceName} Registering Authority`;
         break;
-      case UserGroupType.PROVINCIAL_OFFICE:
-        baseName = `${provinceName} Provincial Office`;
+      case UserGroupType.PROVINCIAL_HELP_DESK:
+        baseName = `${provinceName} Provincial Help Desk`;
         break;
-      case UserGroupType.REGIONAL_OFFICE:
-        baseName = `${provinceName} Regional Office`;
+      case UserGroupType.NATIONAL_HELP_DESK:
+        baseName = `${provinceName} National Help Desk`;
         break;
-      case UserGroupType.HELP_DESK:
-        baseName = `${provinceName} Help Desk`;
+      case UserGroupType.VEHICLE_TESTING_STATION:
+        baseName = `${provinceName} Vehicle Testing Station`;
+        break;
+      case UserGroupType.ADMIN_OFFICE:
+        baseName = `${provinceName} Admin Office`;
         break;
       default:
         baseName = `${provinceName} ${userGroupType}`;
@@ -305,7 +311,7 @@ const EditUserGroupPage: React.FC = () => {
         user_group_code: data.user_group_code,
         user_group_type: data.user_group_type,
         province_code: data.province_code,
-        registration_status: data.registration_status || RegistrationStatus.ACTIVE,
+        registration_status: data.registration_status || RegistrationStatus.REGISTERED,
         address: {
           address_line_1: data.address_line_1,
           address_line_2: data.address_line_2,
@@ -454,12 +460,14 @@ const EditUserGroupPage: React.FC = () => {
                       helperText={errors.user_group_type?.message || 'Select the type of services this group provides'}
                       sx={{ backgroundColor: 'white' }}
                     >
-                      <MenuItem value={UserGroupType.DLTC}>DLTC (Driving License Testing Center)</MenuItem>
+                      <MenuItem value={UserGroupType.FIXED_DLTC}>Fixed DLTC (Driving License Testing Center)</MenuItem>
+                      <MenuItem value={UserGroupType.MOBILE_DLTC}>Mobile DLTC</MenuItem>
                       <MenuItem value={UserGroupType.PRINTING_CENTER}>Printing Center</MenuItem>
                       <MenuItem value={UserGroupType.REGISTERING_AUTHORITY}>Registering Authority</MenuItem>
-                      <MenuItem value={UserGroupType.PROVINCIAL_OFFICE}>Provincial Office</MenuItem>
-                      <MenuItem value={UserGroupType.REGIONAL_OFFICE}>Regional Office</MenuItem>
-                      <MenuItem value={UserGroupType.HELP_DESK}>Help Desk</MenuItem>
+                      <MenuItem value={UserGroupType.PROVINCIAL_HELP_DESK}>Provincial Help Desk</MenuItem>
+                      <MenuItem value={UserGroupType.NATIONAL_HELP_DESK}>National Help Desk</MenuItem>
+                      <MenuItem value={UserGroupType.VEHICLE_TESTING_STATION}>Vehicle Testing Station</MenuItem>
+                      <MenuItem value={UserGroupType.ADMIN_OFFICE}>Admin Office</MenuItem>
                     </TextField>
                   )}
                 />
@@ -504,10 +512,14 @@ const EditUserGroupPage: React.FC = () => {
                       label="Registration Status"
                       sx={{ backgroundColor: 'white' }}
                     >
-                      <MenuItem value={RegistrationStatus.ACTIVE}>Active</MenuItem>
-                      <MenuItem value={RegistrationStatus.PENDING}>Pending</MenuItem>
+                      <MenuItem value={RegistrationStatus.REGISTERED}>Registered</MenuItem>
+                      <MenuItem value={RegistrationStatus.PENDING_REGISTRATION}>Pending Registration</MenuItem>
+                      <MenuItem value={RegistrationStatus.PENDING_RENEWAL}>Pending Renewal</MenuItem>
                       <MenuItem value={RegistrationStatus.SUSPENDED}>Suspended</MenuItem>
                       <MenuItem value={RegistrationStatus.CANCELLED}>Cancelled</MenuItem>
+                      <MenuItem value={RegistrationStatus.PENDING_INSPECTION}>Pending Inspection</MenuItem>
+                      <MenuItem value={RegistrationStatus.INSPECTION_FAILED}>Inspection Failed</MenuItem>
+                      <MenuItem value={RegistrationStatus.DEREGISTERED}>Deregistered</MenuItem>
                     </TextField>
                   )}
                 />

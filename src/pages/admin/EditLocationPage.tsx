@@ -155,7 +155,7 @@ const EditLocationPage: React.FC = () => {
       // If there's a contact_user_id, try to find and set the contact user
       if (location.contact_user_id) {
         try {
-          const contactUser = await userService.getUserById(location.contact_user_id);
+          const contactUser = await userService.getUser(location.contact_user_id);
           setSelectedContactUser(contactUser);
         } catch (error) {
           console.error('Failed to load contact user:', error);
