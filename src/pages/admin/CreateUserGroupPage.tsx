@@ -220,11 +220,13 @@ const CreateUserGroupPage: React.FC = () => {
   // Update contact information when user is selected
   const handleContactUserChange = (user: User | null) => {
     setSelectedContactUser(user);
-    if (user && user.personalDetails) {
+    if (user && (user.personalDetails || user.personal_details)) {
+      // Handle both camelCase and snake_case API responses
+      const personalDetails = user.personalDetails || user.personal_details;
       setValue('contact_user_id', user.id || '');
-      setValue('contact_person', user.personalDetails.fullName || '');
-      setValue('email_address', user.personalDetails.email || '');
-      setValue('phone_number', user.personalDetails.phoneNumber || '');
+      setValue('contact_person', personalDetails.fullName || personalDetails.full_name || '');
+      setValue('email_address', personalDetails.email || '');
+      setValue('phone_number', personalDetails.phoneNumber || personalDetails.phone_number || '');
     } else {
       setValue('contact_user_id', '');
       setValue('contact_person', '');
@@ -264,8 +266,13 @@ const CreateUserGroupPage: React.FC = () => {
 
   // Helper function to format user display in autocomplete with safety checks
   const formatUserOption = (user: User) => {
-    if (!user || !user.personalDetails) return 'Unknown User';
-    const fullName = user.personalDetails.fullName || 'No Name';
+    if (!user) return 'Unknown User';
+    
+    // Handle both camelCase and snake_case API responses
+    const personalDetails = (user as any).personalDetails || (user as any).personal_details;
+    if (!personalDetails) return 'Unknown User';
+    
+    const fullName = personalDetails.fullName || personalDetails.full_name || 'No Name';
     const username = user.username || 'No Username';
     return `${fullName} (${username})`;
   };
@@ -484,10 +491,15 @@ const CreateUserGroupPage: React.FC = () => {
                     />
                   )}
                   renderOption={(props, user) => {
-                    if (!user || !user.personalDetails) return null;
-                    const fullName = user.personalDetails.fullName || 'No Name';
+                    if (!user) return null;
+                    
+                    // Handle both camelCase and snake_case API responses
+                    const personalDetails = (user as any).personalDetails || (user as any).personal_details;
+                    if (!personalDetails) return null;
+                    
+                    const fullName = personalDetails.fullName || personalDetails.full_name || 'No Name';
                     const username = user.username || 'No Username';
-                    const email = user.personalDetails.email || 'No Email';
+                    const email = personalDetails.email || 'No Email';
                     
                     return (
                       <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -509,7 +521,7 @@ const CreateUserGroupPage: React.FC = () => {
                 />
               </Grid>
 
-              {selectedContactUser && selectedContactUser.personalDetails && (
+              {selectedContactUser && ((selectedContactUser as any).personalDetails || (selectedContactUser as any).personal_details) && (
                 <Grid item xs={12}>
                   <Box sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 1, backgroundColor: 'white' }}>
                     <Typography variant="subtitle2" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -517,12 +529,23 @@ const CreateUserGroupPage: React.FC = () => {
                       Selected Contact User
                     </Typography>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      <Chip label={`Name: ${selectedContactUser.personalDetails.fullName || 'No Name'}`} variant="outlined" />
-                      <Chip label={`Email: ${selectedContactUser.personalDetails.email || 'No Email'}`} variant="outlined" />
-                      {selectedContactUser.personalDetails.phoneNumber && (
-                        <Chip label={`Phone: ${selectedContactUser.personalDetails.phoneNumber}`} variant="outlined" />
-                      )}
-                      <Chip label={`Username: ${selectedContactUser.username || 'No Username'}`} variant="outlined" />
+                      {(() => {
+                        const personalDetails = (selectedContactUser as any).personalDetails || (selectedContactUser as any).personal_details;
+                        const fullName = personalDetails.fullName || personalDetails.full_name || 'No Name';
+                        const email = personalDetails.email || 'No Email';
+                        const phoneNumber = personalDetails.phoneNumber || personalDetails.phone_number;
+                        
+                        return (
+                          <>
+                            <Chip label={`Name: ${fullName}`} variant="outlined" />
+                            <Chip label={`Email: ${email}`} variant="outlined" />
+                            {phoneNumber && (
+                              <Chip label={`Phone: ${phoneNumber}`} variant="outlined" />
+                            )}
+                            <Chip label={`Username: ${selectedContactUser.username || 'No Username'}`} variant="outlined" />
+                          </>
+                        );
+                      })()}
                     </Box>
                   </Box>
                 </Grid>
