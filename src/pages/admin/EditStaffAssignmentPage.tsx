@@ -35,7 +35,6 @@ import {
   locationService, 
   userGroupService 
 } from '../../services/locationService';
-import { userService } from '../../services/userService';
 import {
   Location,
   UserGroup,
@@ -52,15 +51,13 @@ const EditStaffAssignmentPage: React.FC = () => {
   // State management
   const [locations, setLocations] = useState<Location[]>([]);
   const [userGroups, setUserGroups] = useState<UserGroup[]>([]);
-  const [assignment, setAssignment] = useState<UserLocationAssignment | null>(null);
+  const [assignment] = useState<UserLocationAssignment | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Form setup
   const {
     control,
     handleSubmit,
-    reset,
-    watch,
     formState: { errors, isSubmitting }
   } = useForm<StaffAssignmentUpdate>({
     defaultValues: {
@@ -80,8 +77,6 @@ const EditStaffAssignmentPage: React.FC = () => {
       is_active: true
     }
   });
-
-  const assignmentType = watch('assignment_type');
 
   useEffect(() => {
     if (assignmentId) {

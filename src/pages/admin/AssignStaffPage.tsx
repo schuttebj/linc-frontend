@@ -18,7 +18,6 @@ import {
   Link,
   Autocomplete,
   Avatar,
-  Chip,
   FormControlLabel,
   Switch,
   Alert,
