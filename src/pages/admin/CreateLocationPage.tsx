@@ -376,8 +376,17 @@ const CreateLocationPage: React.FC = () => {
                       placeholder="e.g., WC001L001"
                       error={!!errors.location_code}
                       helperText={errors.location_code?.message || 'Auto-generated based on user group and location name'}
-                      inputProps={{ style: { textTransform: 'uppercase' } }}
-                      sx={{ backgroundColor: 'white' }}
+                      inputProps={{ 
+                        style: { textTransform: 'uppercase' },
+                        readOnly: true
+                      }}
+                      sx={{ 
+                        backgroundColor: 'white',
+                        '& .MuiInputBase-input': {
+                          backgroundColor: '#f5f5f5',
+                          cursor: 'not-allowed'
+                        }
+                      }}
                     />
                   )}
                 />
