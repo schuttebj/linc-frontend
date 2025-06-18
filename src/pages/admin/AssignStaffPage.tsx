@@ -194,10 +194,11 @@ const AssignStaffPage: React.FC = () => {
     try {
       const assignmentData = {
         user_id: data.user_id,
+        location_id: data.location_id, // Include location_id in request body
         assignment_type: data.assignment_type,
         assignment_status: data.assignment_status,
-        effective_date: data.effective_date,
-        expiry_date: data.expiry_date || undefined,
+        effective_date: data.effective_date ? new Date(data.effective_date).toISOString() : new Date().toISOString(),
+        expiry_date: data.expiry_date ? new Date(data.expiry_date).toISOString() : undefined,
         access_level: data.access_level,
         can_manage_location: data.can_manage_location,
         can_assign_others: data.can_assign_others,
