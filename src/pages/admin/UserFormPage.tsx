@@ -290,7 +290,7 @@ const UserFormPage = () => {
   };
 
   // Set default privileges based on user type
-  const setDefaultPrivilegesForUserType = (userType: string) => {
+  const setDefaultPrivilegesForUserType = (userType: UserType) => {
     let defaultPrivileges;
     
     switch (userType) {
